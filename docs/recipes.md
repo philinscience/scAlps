@@ -51,6 +51,15 @@ python examples/height_and_color.py --input /path/to/GS52_spatial.h5ad --output 
 ```
 
 Choose `--color-gene`, `--layer`, `--groupby` and `--group` for other datasets.
+For example, GS52 annotates malignant cells as `Level_1="Tumor"`:
+
+```bash
+python examples/height_and_color.py --input /path/to/GS52_spatial.h5ad --groupby Level_1 --group Tumor --population-label "Malignant cells" --color-gene Vegfa --output outputs/GS52-malignant-Vegfa --gif
+```
+
+`--population-label` changes only the displayed name; selection still uses the
+exact annotation in `--group`.
+
 Color defaults to a local cell-weighted mean; `color_statistic="sum"` instead
 shows a smoothed sum per grid bin. `color_layer` defaults to X independently
 of the height field's `layer`. Arrays and prefixed gene/obs names also work.

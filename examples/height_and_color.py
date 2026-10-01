@@ -1,4 +1,4 @@
-"""T-cell density for height, a separate score or gene for color.
+"""Selected-cell density for height, a separate score or gene for color.
 
 Without --input, renders a synthetic activation example. With --input, reads
 only Cd8a (or --color-gene) from a Xenium h5ad's log1p_norm layer. Coordinates
@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--layer", default="log1p_norm")
     parser.add_argument("--groupby", default="Level_2")
     parser.add_argument("--group", default="Lymphoid - T cells")
+    parser.add_argument("--population-label", help="Display name for the selected cell population")
     parser.add_argument("--output", type=Path, default=Path("outputs/height-and-color"))
     parser.add_argument("--gif", action="store_true")
     args = parser.parse_args()
@@ -44,9 +45,13 @@ def main():
             density_scale=1,
         )
         sample = str(adata.obs["sample"].iloc[0]) if "sample" in adata.obs else args.input.stem
-        title = f"{sample} · T-cell density and {args.color_gene}"
-        height_label = "T-cell density (cells / native coordinate unit²)"
-        color_label = f"Mean {args.color_gene} in T cells ({args.layer})"
+        population = args.population_label or (
+            "T cells" if args.group == "Lymphoid - T cells" else args.group
+        )
+        density_label = "T-cell density" if population == "T cells" else f"{population} · density"
+        title = f"{sample} · {density_label} and {args.color_gene}"
+        height_label = f"{density_label} (cells / native coordinate unit²)"
+        color_label = f"Mean {args.color_gene} in {population} ({args.layer})"
     else:
         adata = sca.demo()
         options = dict(color="activation_score", groupby="cell_type", groups="T cell")
