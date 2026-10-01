@@ -1,5 +1,43 @@
 # Recipes
 
+## Figure styling and transparent export
+
+All presets default to white. The color bar has a separate panel, with regular
+sans-serif labels and a label row above the ticks. Gene names appear in the
+figure title and in the mean/sum legend label; the two cannot overlap.
+
+```python
+mountain = sca.terrain(adata, "Mki67", layer="log1p_norm")
+mountain.save("outputs/Mki67.png", preset="ember", skirt=False,
+              scalar_bar_title="Mean Mki67 (log1p_norm)")
+mountain.save("outputs/Mki67_transparent.png", transparent_background=True)
+```
+
+The figure contains no branding. To omit its title, pass `title=""`. Disabling
+`scalar_bar` also removes the reserved legend space. The returned plotter's
+active renderer is the terrain, so camera customization still works normally.
+
+## Real Xenium h5ad example
+
+```bash
+python examples/xenium.py /path/to/GS52_spatial.h5ad --output outputs/GS52
+```
+
+This example plots `Mki67`, `Krt19`, and `Cd3e` from the supplied `log1p_norm`
+layer, all-cell density, and T-cell density when the expected `Level_2`
+annotation is present. It includes a transparent PNG and a source/settings
+manifest. Use `--genes` and `--layer` to select other genes or layers.
+
+The script reads only the requested sparse gene columns, cell metadata, and
+coordinates. It does not change the source file, normalize expression, or
+perform imputation. Output stays in the ignored `outputs/` directory.
+
+Coordinate units default to **native coordinate units**. A key called
+`spatial` does not itself establish micrometers. If the calibration is known
+to be micrometers, pass `--unit µm --density-scale 1000000` to report cells/mm².
+The file's layer name is retained in the legend rather than implying that
+log-normalized values are raw transcript counts.
+
 ## Cell types and local fractions
 
 ```python
@@ -85,6 +123,8 @@ finally:
     adata.file.close()
 ```
 
-Coordinates and one gene vector are loaded; the full expression matrix is not.
+The requested gene is sliced before materializing X. AnnData's backed mode can
+still load layers and other annotations eagerly; for files with large layers,
+the selective HDF5 example above avoids loading unrelated layers and embeddings.
 Start at resolution 250–400. Doubling resolution roughly quadruples mesh size.
 SpatialData label centroids may require scanning the whole segmentation image.

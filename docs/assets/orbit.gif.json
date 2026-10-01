@@ -27,8 +27,10 @@
     "contours": 12,
     "skirt": true,
     "title": null,
+    "background": "white",
     "axes": false,
     "scalar_bar": true,
+    "scalar_bar_title": null,
     "image_coordinates": true,
     "off_screen": true,
     "window_size": [

@@ -26,16 +26,19 @@
     "cmap": null,
     "contours": 12,
     "skirt": true,
-    "title": "The cellular atlas / density",
+    "title": "Cell density \u00b7 Synthetic tissue",
+    "background": "white",
     "axes": false,
     "scalar_bar": true,
+    "scalar_bar_title": null,
     "image_coordinates": true,
     "off_screen": true,
     "window_size": [
       1400,
       1000
     ],
-    "show": false
+    "show": false,
+    "transparent_background": false
   },
   "scalps_version": "0.1.0",
   "value_range": [

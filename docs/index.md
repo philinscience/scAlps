@@ -46,6 +46,9 @@ HTML is an interactive standalone scene (rotate, zoom, pan). It needs the
 | ![Alpine](assets/alpine.png) | ![Ember](assets/ember.png) | ![Glacier](assets/glacier.png) |
 
 These images use synthetic data. Their height represents measurements, not anatomy.
+All presets use white backgrounds and regular sans-serif legends. Use
+`mountain.save("figure.png", transparent_background=True)` for a transparent PNG.
+See [real Xenium examples and figure styling](recipes.md) for plots from your data.
 
 ## Running on servers and in notebooks
 

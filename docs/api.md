@@ -36,8 +36,10 @@ Accepts the above data options or a prebuilt `Terrain`.
 | `contours` | `12` | Contour count; 0 disables |
 | `skirt` | `True` | Draw decorative cutaway sides |
 | `title` | value label | Figure title |
+| `background` | `"white"` | Background for all presets |
 | `axes` | `False` | Show coordinate bounds |
 | `scalar_bar` | `True` | Show legend |
+| `scalar_bar_title` | automatic | Separate legend label; includes statistic and layer where relevant |
 | `image_coordinates` | `True` | Reverse y for image convention |
 | `off_screen` | PyVista default | Headless rendering |
 | `window_size` | `(1400, 1000)` | Render size in pixels |
@@ -49,6 +51,9 @@ vmax=None, transform="linear")` returns the terrain surface.
 ## `Terrain.save(path, **options) -> pathlib.Path`
 
 PNG, HTML and GIF accept visual options except `show`/`off_screen` (set internally).
+PNG additionally accepts `transparent_background=True` to write an RGBA image.
+Other formats reject transparency. Figures use regular DejaVu Sans, no watermark,
+and a legend panel below the 3D view. `title=""` hides the figure title.
 GIF adds `frames=90, fps=24`. HTML requires the notebook extra.
 VTP accepts only `mesh()` options. NPZ stores the arrays directly.
 Files are overwritten when their path already exists. A settings JSON sidecar

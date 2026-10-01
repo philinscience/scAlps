@@ -9,9 +9,9 @@ import numpy as np
 from .core import Terrain, terrain
 
 PRESETS = {
-    "alpine": dict(cmap="terrain", background="#e8edf1", ink="#243944", rock="#9aa7aa"),
-    "ember": dict(cmap="magma", background="#101420", ink="#e9e7ef", rock="#222735"),
-    "glacier": dict(cmap="viridis", background="#091f2c", ink="#d6f1f4", rock="#183d4b"),
+    "alpine": dict(cmap="terrain", rock="#9aa7aa"),
+    "ember": dict(cmap="magma", rock="#8b8991"),
+    "glacier": dict(cmap="viridis", rock="#78969e"),
 }
 
 
@@ -49,8 +49,10 @@ def plot(
     contours=12,
     skirt=True,
     title=None,
+    background="white",
     axes=False,
     scalar_bar=True,
+    scalar_bar_title=None,
     image_coordinates=True,
     off_screen=None,
     window_size=(1400, 1000),
@@ -62,8 +64,11 @@ def plot(
     Use ``show=False`` to customize it, or ``off_screen=True, show=False`` on a server.
     ``image_coordinates=True`` displays increasing y downward (Xenium convention).
     ``clim`` controls raw color limits; ``vmax`` controls absolute geometric scaling.
+    All presets use a white background by default. The legend has a dedicated
+    viewport and uses regular DejaVu Sans, independent of the global PyVista theme.
     """
     import pyvista as pv
+    from matplotlib.font_manager import findfont
 
     if preset not in PRESETS:
         raise ValueError(f"Unknown preset {preset!r}; choose from {list(PRESETS)}.")
@@ -86,9 +91,16 @@ def plot(
             clim = (-limit, limit)
         else:
             clim = (0, max(float(finite.max()), 1e-12))
-    p = pv.Plotter(off_screen=off_screen, window_size=window_size)
-    p.set_background(style["background"])
-    p.add_mesh(
+    # Keep the legend outside the 3D viewport, even when the camera is rotated.
+    layout = dict(shape=(2, 1), row_weights=(0.84, 0.16)) if scalar_bar else {}
+    p = pv.Plotter(off_screen=off_screen, window_size=window_size, border=False, **layout)
+    p.set_background(background, all_renderers=True)
+    font_file = findfont("DejaVu Sans")
+    ink = "#202020"
+    font_scale = min(window_size) / 1000
+    label_size = max(9, round(20 * font_scale))
+    title_size = max(10, round(22 * font_scale))
+    actor = p.add_mesh(
         mesh,
         scalars="value",
         cmap=cmap or ("RdBu_r" if signed else _colormap(preset)),
@@ -98,18 +110,7 @@ def plot(
         diffuse=0.8,
         specular=0.12,
         specular_power=30,
-        show_scalar_bar=scalar_bar,
-        scalar_bar_args=dict(
-            title=landscape.label,
-            color=style["ink"],
-            title_font_size=15,
-            label_font_size=12,
-            fmt="%.2g",
-            position_x=0.27,
-            position_y=0.045,
-            width=0.46,
-            height=0.085,
-        ),
+        show_scalar_bar=False,
     )
     span = max(np.ptp(landscape.x), np.ptp(landscape.y))
     if skirt:
@@ -139,28 +140,21 @@ def plot(
         lines = mesh.contour(levels, scalars="value")
         if lines.n_points:
             lines.points[:, 2] += span * 0.0004
-            p.add_mesh(lines, color=style["ink"], opacity=0.22, line_width=1, show_scalar_bar=False)
+            p.add_mesh(lines, color=ink, opacity=0.22, line_width=1, show_scalar_bar=False)
     p.add_text(
-        title or landscape.label,
+        landscape.label if title is None else title,
         position=(0.045, 0.91),
         viewport=True,
-        font_size=20,
-        color=style["ink"],
-        font="arial",
-    )
-    p.add_text(
-        "scAlps  /  SPATIAL LANDSCAPES",
-        position=(0.045, 0.035),
-        viewport=True,
-        font_size=9,
-        color=style["ink"],
+        font_size=title_size,
+        color=ink,
+        font_file=font_file,
     )
     if axes:
         p.show_bounds(
             xtitle=f"x ({landscape.metadata['unit']})",
             ytitle=("−y" if image_coordinates else "y") + f" ({landscape.metadata['unit']})",
             ztitle="visual height",
-            color=style["ink"],
+            color=ink,
             grid=False,
         )
     p.view_isometric()
@@ -168,12 +162,55 @@ def plot(
     p.camera.elevation = 12
     p.camera.zoom(1.25)
     p.enable_anti_aliasing("ssaa")
+    if scalar_bar:
+        p.subplot(1, 0)
+        statistic = landscape.metadata.get("statistic", "mean")
+        if scalar_bar_title is None:
+            scalar_bar_title = landscape.label
+            if statistic in {"mean", "sum"}:
+                scalar_bar_title = f"{statistic.capitalize()} {landscape.label}"
+                layer = landscape.metadata.get("layer")
+                if layer:
+                    scalar_bar_title += f" ({layer})"
+        p.add_text(
+            scalar_bar_title,
+            position=(0.23, 0.75),
+            viewport=True,
+            font_size=label_size,
+            font_file=font_file,
+            color=ink,
+        )
+        bar = p.add_scalar_bar(
+            title="",
+            mapper=actor.mapper,
+            color=ink,
+            font_family="arial",
+            label_font_size=label_size,
+            bold=False,
+            italic=False,
+            shadow=False,
+            fmt="%.3g",
+            n_labels=5,
+            position_x=0.23,
+            position_y=0.13,
+            width=0.54,
+            height=0.42,
+            vertical=False,
+        )
+        # PyVista exposes no font-file keyword on scalar bars. Use its TextProperty
+        # wrapper to set the same portable font used by the plot and legend labels.
+        bar.SetLabelTextProperty(
+            pv.TextProperty(
+                font_file=font_file, font_size=label_size, color=ink, bold=False, italic=False
+            )
+        )
+        p.subplot(0, 0)
     if show:
         p.show()
     return p
 
 
-def save(landscape, path, *, frames=90, fps=24, **kwargs):
+def save(landscape, path, *, frames=90, fps=24, transparent_background=False, **kwargs):
     """Write an export and a JSON sidecar recording scientific and visual settings."""
     path = Path(path)
     suffix = path.suffix.lower()
@@ -181,6 +218,8 @@ def save(landscape, path, *, frames=90, fps=24, **kwargs):
         raise ValueError("Choose .png, .html, .gif, .vtp or .npz.")
     if suffix == ".gif" and (frames < 2 or fps <= 0):
         raise ValueError("GIF exports need frames >= 2 and fps > 0.")
+    if transparent_background and suffix != ".png":
+        raise ValueError("Transparent backgrounds are supported for PNG exports only.")
     path.parent.mkdir(parents=True, exist_ok=True)
     if suffix == ".npz":
         np.savez_compressed(
@@ -197,7 +236,7 @@ def save(landscape, path, *, frames=90, fps=24, **kwargs):
         p = plot(landscape, off_screen=True, show=False, **kwargs)
         try:
             if suffix == ".png":
-                p.screenshot(path)
+                p.screenshot(path, transparent_background=transparent_background)
             elif suffix == ".html":
                 try:
                     import trame_pyvista  # noqa: F401
@@ -220,6 +259,8 @@ def save(landscape, path, *, frames=90, fps=24, **kwargs):
             if param.default is not inspect.Parameter.empty and name != "value"
         }
         render_options.update(kwargs, off_screen=True, show=False)
+        if suffix == ".png":
+            render_options["transparent_background"] = transparent_background
     metadata = dict(
         landscape.metadata,
         label=landscape.label,

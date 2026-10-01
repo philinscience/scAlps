@@ -70,9 +70,19 @@ Or `scalps demo --value MKI67 --preset ember -o outputs/demo.png`.
 | Signed score, including valleys | `sca.terrain(adata, "immune_balance")` |
 | Custom per-cell values | `sca.terrain(adata, my_array)` |
 
-`alpine` is a bright topographic atlas, `ember` a dark volcanic landscape, and
-`glacier` a cool luminous relief. Signed values automatically use a diverging
-colormap. Customize `cmap`, `height`, `clim`, `vmax`, `contours`, and `skirt`.
+`alpine`, `ember`, and `glacier` select the terrain palette. Every preset uses
+a **white background**, regular sans-serif labels, and a separate color-bar
+panel. Figures have no branding or watermark. Signed values automatically use
+a diverging colormap. Customize `cmap`, `height`, `clim`, `vmax`, `contours`, and `skirt`.
+
+```python
+mountain.save("outputs/figure.png", transparent_background=True)
+mountain.plot(scalar_bar_title="Mean expression (log-normalized)", skirt=False)
+```
+
+For real Xenium data, [examples/xenium.py](examples/xenium.py) renders gene and
+cell-density panels from an h5ad file. It loads selected genes from the supplied
+layer and keeps unknown coordinate units explicit; see [the recipe](docs/recipes.md).
 
 ## SpatialData
 

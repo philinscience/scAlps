@@ -7,9 +7,9 @@ import scalps as sca
 out = Path(__file__).resolve().parents[1] / "docs" / "assets"
 adata = sca.demo()
 for preset, value, title in [
-    ("ember", "MKI67", "MKI67 / peaks of proliferation"),
-    ("alpine", None, "The cellular atlas / density"),
-    ("glacier", "CD3D", "CD3D / an immune landscape"),
+    ("ember", "MKI67", "MKI67 · Synthetic tissue"),
+    ("alpine", None, "Cell density · Synthetic tissue"),
+    ("glacier", "CD3D", "CD3D · Synthetic tissue"),
 ]:
     mountain = sca.terrain(adata, value, resolution=300, smooth=3)
     mountain.save(out / f"{preset}.png", preset=preset, title=title)

@@ -24,6 +24,18 @@ def test_png(tmp_path, preset):
     image = np.array(Image.open(path))
     assert image.shape[:2] == (300, 400)
     assert image.std() > 10
+    np.testing.assert_array_equal(image[0, 0, :3], [255, 255, 255])
+
+
+def test_transparent_png(tmp_path):
+    t = sca.terrain(sca.demo(1000), "MKI67", resolution=30)
+    path = t.save(tmp_path / "transparent.png", transparent_background=True, window_size=(400, 300))
+    image = np.array(Image.open(path))
+    assert image.shape == (300, 400, 4)
+    assert image[0, 0, 3] == 0
+    assert image[:, :, 3].max() == 255
+    metadata = json.loads(path.with_suffix(".png.json").read_text())
+    assert metadata["render"]["transparent_background"] is True
 
 
 def test_html_gif(tmp_path):
