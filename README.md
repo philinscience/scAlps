@@ -30,10 +30,10 @@ pip install -e .
 pip install -e '.[notebook,spatial]'  # optional HTML/Jupyter and SpatialData
 ```
 
-For private GitHub installation, use an authenticated SSH connection:
+Install directly from the public GitHub repository:
 
 ```bash
-pip install 'scalps @ git+ssh://git@github.com/philinscience/scAlps.git'
+pip install 'scalps @ git+https://github.com/philinscience/scAlps.git'
 ```
 
 For development against the sibling PyVista checkout:
@@ -161,7 +161,8 @@ pytest
 mkdocs serve
 ```
 
-This is an early private research tool. No PyPI release or public documentation
-deployment is configured. Built on [PyVista](https://docs.pyvista.org/),
+This is an early research tool; no PyPI release is configured. Documentation
+is ready for Read the Docs using [the hosting setup](CONTRIBUTING.md#read-the-docs).
+Built on [PyVista](https://docs.pyvista.org/),
 [AnnData](https://anndata.readthedocs.io/), and
 [SpatialData](https://spatialdata.scverse.org/).

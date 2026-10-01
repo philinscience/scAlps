@@ -4,6 +4,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.11', '3.12']
     env:
@@ -16,7 +17,17 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: sudo apt-get update && sudo apt-get install -y libosmesa6
       - run: pip install -e '.[dev,notebook,spatial]'
+      - name: Check dependency consistency
+        run: python -m pip check
       - run: ruff check .
       - run: pytest -q
-      - run: mkdocs build --strict
       - run: python -m build
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r docs/requirements.txt
+      - run: mkdocs build --strict

@@ -20,4 +20,36 @@ when changing those paths.
 
 `examples/gallery.py` regenerates documentation images from seeded synthetic
 data. Keep real datasets in ignored `data/`, and local exports in `outputs/`.
-The CI workflow tests and builds docs but does not deploy or publish anything.
+GitHub Actions tests Python 3.11 and 3.12, checks dependency consistency, and
+builds the package. A separate documentation job uses the same requirements
+as Read the Docs, without installing scAlps or its rendering dependencies.
+
+The `spatial` extra currently constrains AnnData to `<0.13` for compatibility
+with SpatialData `<0.8`. Upgrade and validate these dependencies together.
+
+## Read the Docs
+
+The repository includes `.readthedocs.yaml` for MkDocs on Python 3.12, with
+strict warning checks and pinned documentation tools in `docs/requirements.txt`.
+The gallery is committed synthetic data; documentation builds do not load
+private slides or regenerate plots.
+
+To build the docs alone:
+
+```bash
+python -m pip install -r docs/requirements.txt
+mkdocs build --strict
+mkdocs serve
+```
+
+For the one-time hosting setup, [import the repository into Read the Docs](https://app.readthedocs.org/dashboard/import/).
+Select `philinscience/scAlps`, use `main` as the default branch, and keep the
+configuration path `.readthedocs.yaml`. Trigger the first `latest` build and
+verify the GitHub integration/webhook so subsequent pushes rebuild the docs.
+After it succeeds, add the assigned documentation URL to the README and
+the GitHub repository's website field. The site takes its canonical URL from
+`READTHEDOCS_CANONICAL_URL`, so it also works if the assigned project slug differs.
+
+See the [Read the Docs MkDocs guide](https://docs.readthedocs.com/platform/stable/intro/mkdocs.html)
+for the hosting integration. GitHub Actions only validates builds; Read the
+Docs publishes the documentation after the project has been imported.

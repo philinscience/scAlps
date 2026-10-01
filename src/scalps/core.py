@@ -163,7 +163,8 @@ def terrain(
     if color_selected is not None and not color_selected.any():
         raise ValueError("No finite color values in the selected cells.")
     if val is not None:
-        selected &= np.isfinite(val)
+        # pandas Copy-on-Write can expose a read-only NumPy selection.
+        selected = selected & np.isfinite(val)
         if not selected.any():
             raise ValueError("No finite values in the selected cells.")
     span = np.ptp(xy, axis=0)

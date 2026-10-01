@@ -45,6 +45,21 @@ def test_cell_weighted_mean():
     np.testing.assert_allclose(t.values[t.mask], 1000 / 101)
 
 
+def test_grouped_mean_with_pandas_copy_on_write():
+    # pandas 3 enables CoW by default; enable it on pandas 2 as well to catch
+    # attempts to modify read-only arrays returned by Series.to_numpy().
+    with pd.option_context("mode.copy_on_write", True):
+        a = tissue()
+        a.obs.loc["0", "score"] = np.nan
+        original = a.obs.copy(deep=True)
+        t = sca.terrain(a, "score", groupby="type", groups="A", color="G", resolution=30)
+        np.testing.assert_allclose(t.values[t.mask], 4)
+        np.testing.assert_allclose(t.color_values[t.color_mask], 3)
+        assert t.metadata["n_selected"] == 47
+        assert t.metadata["color"]["n_selected"] == 48
+        pd.testing.assert_frame_equal(a.obs, original)
+
+
 def test_density_units_and_fraction():
     a = tissue()
     total = sca.terrain(a, resolution=30, support=1e-8)

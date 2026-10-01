@@ -1,5 +1,9 @@
 site_name: scAlps
 site_description: Your tissue has a landscape. Go explore it.
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, '']
+repo_url: https://github.com/philinscience/scAlps
+repo_name: philinscience/scAlps
+edit_uri: edit/main/docs/
 theme:
   name: material
   logo: assets/scalps-icon.png
