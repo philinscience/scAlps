@@ -1,6 +1,4 @@
-<img src="assets/scalps-logo.png" alt="scAlps — spatial single-cell terrain" width="520">
-
-# Your tissue has a landscape
+# scAlps
 
 scAlps turns spatial single-cell measurements into explorable 3D terrain.
 It accepts AnnData and SpatialData and renders with PyVista.
@@ -10,7 +8,7 @@ It accepts AnnData and SpatialData and renders with PyVista.
 ## Install and explore
 
 ```bash
-pip install -e '.[notebook,spatial]'
+pip install 'scalps[notebook,spatial] @ git+https://github.com/philinscience/scAlps.git'
 scalps demo --value MKI67 --preset ember -o outputs/demo.png
 ```
 
@@ -93,3 +91,12 @@ sca.plot(adata, "MKI67")
 
 See the [PyVista screenshot documentation](https://docs.pyvista.org/examples/02-plot/screenshot.html)
 for backend setup and the [recipes](recipes.md) for customization.
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+recipes
+api
+method
+```

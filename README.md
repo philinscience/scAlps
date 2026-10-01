@@ -161,8 +161,10 @@ coordinate extent also matters; see [the method](docs/method.md).
 
 ```bash
 pip install -e '.[dev,notebook,spatial]'
+pip install -r docs/requirements.txt
 pytest
-mkdocs serve
+sphinx-build -b dirhtml -n -W --keep-going docs site
+python -m http.server --directory site
 ```
 
 This is an early research tool; no PyPI release is configured. Documentation

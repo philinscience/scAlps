@@ -30,4 +30,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r docs/requirements.txt
-      - run: mkdocs build --strict
+      - run: sphinx-build -b dirhtml -n -W --keep-going docs site

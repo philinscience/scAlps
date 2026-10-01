@@ -1,0 +1,13 @@
+/* Keep wide parameter tables scrollable within the article on small screens. */
+.bd-article table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* Function signatures in headings can contain identifiers wider than a phone. */
+.bd-article h2 code,
+.bd-article h2 code .pre {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

@@ -3,9 +3,10 @@
 ```bash
 uv venv --python 3.11
 uv pip install -e '.[dev,notebook,spatial]'
+uv pip install -r docs/requirements.txt
 .venv/bin/pytest -q
 .venv/bin/ruff check .
-.venv/bin/mkdocs build --strict
+.venv/bin/sphinx-build -b dirhtml -n -W --keep-going docs site
 .venv/bin/python -m build
 ```
 
@@ -32,8 +33,10 @@ with SpatialData `<0.8`. Upgrade and validate these dependencies together.
 The live documentation is at [scalps.readthedocs.io](https://scalps.readthedocs.io/en/latest/).
 The README badge reports the build status of the `latest` version.
 
-The repository includes `.readthedocs.yaml` for MkDocs on Python 3.12, with
+The repository includes `.readthedocs.yaml` for Sphinx on Python 3.12, with
 strict warning checks and pinned documentation tools in `docs/requirements.txt`.
+It uses Sphinx Book Theme, matching cellpin, with MyST parsing the existing
+Markdown pages. The `dirhtml` builder preserves URLs such as `/api/` and `/recipes/`.
 The gallery is committed synthetic data; documentation builds do not load
 private slides or regenerate plots.
 
@@ -41,8 +44,8 @@ To build the docs alone:
 
 ```bash
 python -m pip install -r docs/requirements.txt
-mkdocs build --strict
-mkdocs serve
+sphinx-build -b dirhtml -n -W --keep-going docs site
+python -m http.server --directory site
 ```
 
 For the one-time hosting setup, [import the repository into Read the Docs](https://app.readthedocs.org/dashboard/import/).
@@ -53,6 +56,6 @@ For a fork, update the documentation URL and badge project slug in the README
 and the GitHub repository's website field. The site takes its canonical URL from
 `READTHEDOCS_CANONICAL_URL`, so it also works if the assigned project slug differs.
 
-See the [Read the Docs MkDocs guide](https://docs.readthedocs.com/platform/stable/intro/mkdocs.html)
+See the [Read the Docs Sphinx guide](https://docs.readthedocs.com/platform/stable/intro/sphinx.html)
 for the hosting integration. GitHub Actions only validates builds; Read the
 Docs publishes the documentation after the project has been imported.
