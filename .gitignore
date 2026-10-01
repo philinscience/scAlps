@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+dist/
+site/
+*.egg-info/
+.coverage
+.DS_Store
+outputs/
+data/
+*.h5ad
+*.zarr/

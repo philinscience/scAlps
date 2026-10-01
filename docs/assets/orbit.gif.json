@@ -1,0 +1,47 @@
+{
+  "statistic": "mean",
+  "smooth": 2.0,
+  "support": 0.02,
+  "resolution": 160,
+  "spacing": 34.754408087289,
+  "unit": "\u00b5m",
+  "density_scale": 1000000.0,
+  "n_cells": 30000,
+  "n_selected": 30000,
+  "spatial_key": "spatial",
+  "table": null,
+  "element": null,
+  "coordinate_system": null,
+  "value": "MKI67",
+  "layer": null,
+  "groupby": null,
+  "groups": null,
+  "label": "MKI67",
+  "render": {
+    "preset": "ember",
+    "height": 0.22,
+    "transform": "linear",
+    "vmax": null,
+    "clim": null,
+    "cmap": null,
+    "contours": 12,
+    "skirt": true,
+    "title": null,
+    "axes": false,
+    "scalar_bar": true,
+    "image_coordinates": true,
+    "off_screen": true,
+    "window_size": [
+      700,
+      500
+    ],
+    "show": false
+  },
+  "scalps_version": "0.1.0",
+  "value_range": [
+    0.0,
+    14.605841322224
+  ],
+  "frames": 48,
+  "fps": 16
+}

@@ -1,0 +1,22 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12']
+    env:
+      PYVISTA_OFF_SCREEN: 'true'
+      VTK_DEFAULT_OPENGL_WINDOW: vtkOSOpenGLRenderWindow
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: sudo apt-get update && sudo apt-get install -y libosmesa6
+      - run: pip install -e '.[dev,notebook,spatial]'
+      - run: ruff check .
+      - run: pytest -q
+      - run: mkdocs build --strict
+      - run: python -m build

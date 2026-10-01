@@ -1,0 +1,123 @@
+# scAlps
+
+**Your tissue has a landscape. Go explore it.**
+
+Turn spatial single-cell data into mountains, valleys and islands with PyVista.
+Cell density, cell types, genes, pathway scores: one small API, three visual moods.
+
+![Synthetic MKI67 landscape](docs/assets/ember.png)
+
+```python
+import scalps as sca
+
+sca.plot(adata)  # cell density
+sca.plot(adata, "MKI67", preset="ember")  # gene expression
+sca.plot(adata, "prolif_score", preset="glacier")  # obs score
+sca.plot(adata, groupby="cell_type", groups="T cell")  # cell-type density
+```
+
+AnnData coordinates live in `adata.obsm["spatial"]`, in micrometers by default.
+Expression is read as supplied: scAlps does **not** silently normalize or log it.
+
+## Install
+
+Python 3.11 or newer. From this repository:
+
+```bash
+pip install -e .
+pip install -e '.[notebook,spatial]'  # optional HTML/Jupyter and SpatialData
+```
+
+For private GitHub installation, use an authenticated SSH connection:
+
+```bash
+pip install 'scalps @ git+ssh://git@github.com/philinscience/scAlps.git'
+```
+
+For development against the sibling PyVista checkout:
+
+```bash
+pip install -e ../pyvista
+pip install -e '.[dev,notebook,spatial]'
+```
+
+## Start with a mountain
+
+No data downloads needed. This is **synthetic** tissue, not a biological result.
+
+```python
+adata = sca.demo()
+mountain = sca.terrain(adata, "MKI67", resolution=300, smooth=2.5)
+mountain.plot(preset="ember")
+mountain.save("outputs/mki67.png", preset="ember")
+mountain.save("outputs/mki67.html", preset="ember")  # interactive, notebook extra
+mountain.save("outputs/mki67.gif", preset="ember", frames=90)
+```
+
+Or `scalps demo --value MKI67 --preset ember -o outputs/demo.png`.
+
+![Orbit around synthetic expression peaks](docs/assets/orbit.gif)
+
+## Choose your landscape
+
+| What to show | Call |
+| --- | --- |
+| All-cell density | `sca.terrain(adata)` |
+| T-cell density | `sca.terrain(adata, groupby="cell_type", groups="T cell")` |
+| Local T-cell fraction | `sca.terrain(adata, groupby="cell_type", groups="T cell", statistic="fraction")` |
+| Gene from a layer | `sca.terrain(adata, "MKI67", layer="counts")` |
+| Numeric score | `sca.terrain(adata, "prolif_score")` |
+| Signed score, including valleys | `sca.terrain(adata, "immune_balance")` |
+| Custom per-cell values | `sca.terrain(adata, my_array)` |
+
+`alpine` is a bright topographic atlas, `ember` a dark volcanic landscape, and
+`glacier` a cool luminous relief. Signed values automatically use a diverging
+colormap. Customize `cmap`, `height`, `clim`, `vmax`, `contours`, and `skirt`.
+
+## SpatialData
+
+```python
+# Use a table's existing obsm coordinates:
+sca.plot(sdata, "MKI67", table="table")
+
+# Or derive and align centroids in a named coordinate system:
+sca.plot(sdata, "MKI67", table="table", element="cell_boundaries", coordinate_system="global")
+```
+
+Explicit elements use SpatialData transformations and align centroids by the
+table's region/instance IDs, never by incidental row order. A table-only call
+uses `obsm` as supplied; it does not transform those coordinates.
+
+## Honest mountains
+
+Height is a visual encoding, **not physical tissue elevation**. By default the
+99th percentile of absolute values sets peak height, and outliers are clipped
+in geometry only; color and exported values retain their original units. Use a
+shared `vmax` and `clim` when comparing slides. Matching physical bandwidth and
+coordinate extent also matters; see [the method](docs/method.md).
+
+- Mean fields smooth cell sums and counts separately, then divide. Missing values
+  contribute to neither. Real zeros remain zeros.
+- Density is Gaussian-smoothed cell count per area, not occupancy-normalized.
+  The default is cells/mm² for micrometer coordinates.
+- Tissue support comes from all-cell occupancy. Large empty gaps are removed;
+  nearby regions can merge at the chosen smoothing scale.
+- Genes are sliced before materialization, so sparse expression stays practical.
+- Exports include JSON settings; `.npz` keeps values, support, counts and coordinates.
+
+## Learn more
+
+[Quickstart](docs/index.md) · [Recipes](docs/recipes.md) ·
+[API](docs/api.md) · [Method & limitations](docs/method.md) ·
+[Example notebook](examples/quickstart.ipynb)
+
+```bash
+pip install -e '.[dev,notebook,spatial]'
+pytest
+mkdocs serve
+```
+
+This is an early private research tool. No PyPI release or public documentation
+deployment is configured. Built on [PyVista](https://docs.pyvista.org/),
+[AnnData](https://anndata.readthedocs.io/), and
+[SpatialData](https://spatialdata.scverse.org/).

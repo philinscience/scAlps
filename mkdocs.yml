@@ -1,0 +1,20 @@
+site_name: scAlps
+site_description: Your tissue has a landscape. Go explore it.
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: teal
+    accent: amber
+  features:
+    - navigation.tabs
+    - content.code.copy
+nav:
+  - Start here: index.md
+  - Recipes: recipes.md
+  - API: api.md
+  - Method: method.md
+markdown_extensions:
+  - fenced_code
+  - tables
+  - admonition
