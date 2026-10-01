@@ -23,6 +23,10 @@ For your Xenium data, supply cell centroids in `adata.obsm["spatial"]`.
 Use a gene name, numeric `obs` column or no value for cell density.
 Coordinates default to micrometers; see [units and methods](method.md).
 
+Explore the [illustrated recipes](recipes.md) for density, cell-type fractions,
+expression, signed scores, smoothing comparisons and exports. Every gallery
+panel can be regenerated with `python examples/recipes.py` from a checkout.
+
 For two measurements at once, add `color`: for example, T-cell density as
 height and a score or gene as color. Both are labelled separately.
 

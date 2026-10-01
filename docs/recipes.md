@@ -1,5 +1,145 @@
 # Recipes
 
+## Reproduce the gallery
+
+The gallery below uses seeded **synthetic** tissue, with no downloads or private
+data. Start a Python session with:
+
+```python
+import scalps as sca
+
+adata = sca.demo(seed=7)
+view = dict(height=0.16, skirt=False, contours=8, window_size=(1200, 900))
+```
+
+The examples use these shared display settings. Height represents the selected
+measurement, not physical tissue elevation. Replace `adata` with your own data
+and check its gene names, annotations, layers and coordinate units.
+
+From a repository checkout, regenerate all ten PNGs and their JSON settings:
+
+```bash
+python examples/recipes.py
+python examples/recipes.py --output outputs/my-recipes
+```
+
+The default destination is `docs/assets/recipes/`. The
+[gallery script](https://github.com/philinscience/scAlps/blob/main/examples/recipes.py)
+also records the exact titles, palettes and limits used for these figures.
+For headless rendering, see [running on servers](index.md#running-on-servers-and-in-notebooks).
+
+## All-cell density
+
+```python
+mountain = sca.terrain(adata)
+mountain.plot(**view, preset="glacier", title="Cell density · Synthetic tissue")
+```
+
+![All-cell density in synthetic tissue](assets/recipes/cell-density.png)
+
+With no value supplied, height and color show Gaussian-smoothed cell density.
+The demo coordinates are in micrometers, so the default density is cells/mm².
+For uncalibrated coordinates, use `unit="native coordinate units", density_scale=1`;
+changing `unit` alone does not rescale coordinates or density.
+
+## Cell types and local fractions
+
+```python
+mountain = sca.terrain(adata, groupby="cell_type", groups="T cell")
+mountain.plot(**view, preset="glacier", title="T-cell density · Synthetic tissue")
+
+fraction = sca.terrain(
+    adata, groupby="cell_type", groups="T cell", statistic="fraction",
+)
+fraction.plot(
+    **view, preset="glacier", clim=(0, 1), vmax=1,
+    title="Local T-cell fraction · Synthetic tissue",
+)
+```
+
+| T-cell density | Local T-cell fraction |
+| --- | --- |
+| ![T-cell density](assets/recipes/tcell-density.png) | ![Local T-cell fraction](assets/recipes/tcell-fraction.png) |
+
+Density counts selected cells per area; fraction divides their smoothed count
+by the smoothed all-cell count. A dense region need not have a high fraction.
+Both retain the all-cell tissue footprint. `vmax=1` and `clim=(0, 1)` give
+fractions a fixed height and color scale. To combine populations, pass a list
+such as `groups=["T cell", "Tumor"]` using categories present in your data.
+
+## Expression and scores
+
+```python
+mountain = sca.terrain(adata, "gene:MKI67", layer="counts")
+mountain.plot(**view, preset="ember", title="MKI67 expression · Synthetic tissue")
+```
+
+![Mean MKI67 expression in synthetic tissue](assets/recipes/gene-expression.png)
+
+Gene expression defaults to a local cell-weighted mean: smoothed expression
+sums divided by smoothed counts of cells with finite measurements. Zeros
+contribute to the mean; missing values do not. The demo's `counts` layer contains
+synthetic counts. Prepare normalized expression upstream and pass its layer
+when appropriate; scAlps does not normalize expression.
+
+```python
+score = sca.terrain(adata, "obs:prolif_score")
+score.plot(**view, transform="sqrt", title="Proliferation score · Synthetic tissue")
+
+balance = sca.terrain(adata, "immune_balance")
+balance.plot(**view, cmap="RdBu_r", title="Signed immune balance · Synthetic tissue")
+```
+
+| Continuous score | Signed score |
+| --- | --- |
+| ![Synthetic proliferation score with square-root height mapping](assets/recipes/score.png) | ![Synthetic immune balance with peaks and valleys](assets/recipes/signed-score.png) |
+
+The `gene:` and `obs:` prefixes disambiguate duplicate names. `sqrt` and `log1p`
+change only the height mapping, preserving signs; color and numerical exports
+retain the aggregated values. Signed scores produce peaks and valleys and
+automatically use a diverging palette unless a colormap is supplied.
+
+### Summed expression
+
+```python
+mountain = sca.terrain(adata, "MKI67", layer="counts", statistic="sum")
+mountain.plot(
+    **view, preset="ember", title="MKI67 sum · Synthetic tissue",
+    scalar_bar_title="Smoothed MKI67 sum per grid bin",
+)
+```
+
+![Smoothed MKI67 sum per grid bin](assets/recipes/gene-sum.png)
+
+`sum` smooths expression totals per grid bin without dividing by cell count.
+It reflects both cell abundance and expression, and changes with grid spacing.
+It is neither mean expression nor an area-normalized expression density.
+
+## Resolution and smoothing
+
+```python
+for sigma in (1, 4):
+    mountain = sca.terrain(
+        adata, "MKI67", layer="counts", resolution=250, smooth=sigma,
+    )
+    mountain.plot(
+        **view, preset="ember", vmax=20, clim=(0, 20),
+        title=f"MKI67 · Gaussian sigma = {sigma} pixels · Synthetic tissue",
+    )
+```
+
+| Sigma = 1 grid pixel | Sigma = 4 grid pixels |
+| --- | --- |
+| ![MKI67 with narrow smoothing](assets/recipes/smoothing-sharp.png) | ![MKI67 with broad smoothing](assets/recipes/smoothing-broad.png) |
+
+Both panels use the same data, resolution, height scale and color limits.
+Larger `smooth` values suppress local variation and can join nearby tissue
+regions. `resolution` sets the longest unpadded grid dimension; `smooth` is the
+Gaussian sigma in grid pixels, not coordinate units. The physical sigma is
+`smooth * mountain.metadata["spacing"]`. Smoothing also affects support and
+outskirts trimming; it is not just a display effect. See
+[comparing slides](#comparing-slides) before interpreting differences across samples.
+
 ## Independent height and color
 
 Use `color` for a second measurement. Height and contours continue to follow
@@ -13,14 +153,14 @@ mountain = sca.terrain(
     color="activation_score",  # explicitly synthetic demo score
 )
 mountain.plot(
-    cmap="viridis", clim=(0, 1),
+    **view, cmap="viridis", clim=(0, 1),
     title="T-cell density and activation · Synthetic tissue",
     height_label="T-cell density (cells/mm²)",
     scalar_bar_title="Mean activation score in T cells (synthetic)",
 )
 ```
 
-![Density height and synthetic activation color](assets/height-and-color.png)
+![Density height and synthetic activation color](assets/recipes/height-color.png)
 
 For GS52, use its T-cell annotation and supplied Cd8a expression. The coordinate
 calibration is unknown, so retain native units and use `density_scale=1`:
@@ -42,8 +182,9 @@ This color is mean Cd8a expression among nearby annotated T cells, not an
 activation score or the fraction of Cd8a-positive cells. No expression
 normalization or scoring is applied by the plotting tool.
 
-To reproduce the PNG, numerical export and optional slow GIF without loading
-all expression layers:
+For a standalone height-and-color example with a PNG, numerical export and
+optional slow GIF, use the script below. For real files it loads only the
+requested expression column, metadata and coordinates:
 
 ```bash
 python examples/height_and_color.py  # synthetic score example
@@ -131,35 +272,49 @@ including regions where a selected-cell mean has no valid measurements. It sits
 below the lowest valley and any skirt, preserving x/y alignment and tissue holes.
 It is a spatial reference, not another measurement or a physical tissue height.
 
-## Cell types and local fractions
+## Export figures, interactive scenes and numerical data
 
 ```python
-sca.plot(adata, groupby="cell_type", groups=["T cell", "B cell"])
-sca.plot(
-    adata,
-    groupby="cell_type",
-    groups="T cell",
-    statistic="fraction",
-    clim=(0, 1),
-    vmax=1,
-    preset="glacier",
-)
+mountain = sca.terrain(adata, "MKI67", layer="counts")
+mountain.save("outputs/MKI67.png", **view, preset="ember")
+mountain.save("outputs/MKI67-transparent.png", **view, transparent_background=True)
+mountain.save("outputs/MKI67.html", **view, preset="ember")
+mountain.save("outputs/MKI67.gif", **view, preset="ember", frames=360, fps=15)
+mountain.save("outputs/MKI67.npz")
+mountain.save("outputs/MKI67.vtp", height=view["height"])
 ```
 
-Density uses only selected cells in its numerator; fraction divides by all
-cells locally. Both retain the full tissue footprint.
+| Format | Use |
+| --- | --- |
+| PNG | Static figure; optional transparent background |
+| HTML | Standalone interactive scene with rotation, zoom and pan; requires the `notebook` extra |
+| GIF | Orbit animation; 360 frames at 15 fps take 24 seconds |
+| NPZ | Aggregated values, coordinates, counts and support masks, before height mapping |
+| VTP | Terrain mesh for PyVista or ParaView; accepts `height`, `vmax` and `transform` |
 
-## Expression and scores
+Every export writes a `.json` settings sidecar next to the file. Existing files
+at the chosen paths are overwritten. With independent color, NPZ also includes
+`color_values` and `color_mask`, and VTP includes a `color` point array.
+
+Read the numerical grid without a renderer:
 
 ```python
-sca.plot(adata, "gene:MKI67", layer="counts", preset="ember")
-sca.plot(adata, "obs:prolif_score", transform="sqrt", height=0.3)
-sca.plot(adata, "immune_balance", cmap="RdBu_r")
+import numpy as np
+
+with np.load("outputs/MKI67.npz") as grid:
+    values = np.where(grid["mask"], grid["values"], np.nan)
+    x, y = grid["x"], grid["y"]  # values use (x, y) indexing
 ```
 
-The `gene:` and `obs:` prefixes disambiguate duplicate names. `sqrt` and `log1p`
-change only the height mapping, preserving signs; they do not normalize expression.
-Prepare normalized expression upstream and pass its layer if desired.
+To exercise every export format as well as regenerate the gallery:
+
+```bash
+pip install -e '.[notebook]'
+python examples/recipes.py --exports
+```
+
+The additional exports go to `outputs/recipes/`. HTML export temporarily uses
+a localhost server; PNG, HTML and GIF need a working rendering backend.
 
 ## SpatialData with transformed geometry
 

@@ -76,6 +76,11 @@ Or `scalps demo --value MKI67 --preset ember -o outputs/demo.png`.
 | Signed score, including valleys | `sca.terrain(adata, "immune_balance")` |
 | Custom per-cell values | `sca.terrain(adata, my_array)` |
 
+Browse the [illustrated recipes](docs/recipes.md) for density versus fraction,
+mean versus summed expression, signed scores, smoothing and export examples.
+Run `python examples/recipes.py` to regenerate all ten illustrations from
+seeded synthetic data; add `--exports` to try every export format.
+
 ## Independent height and color
 
 Keep T-cell density as height and color it by a gene or score in those T cells:

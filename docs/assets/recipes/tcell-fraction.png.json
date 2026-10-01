@@ -1,0 +1,61 @@
+{
+  "statistic": "fraction",
+  "smooth": 2.0,
+  "support": 0.02,
+  "density_percentile": 1.0,
+  "density_cutoff": 210.69620107036312,
+  "n_low_density_cells": 300,
+  "resolution": 250,
+  "spacing": 22.19257383887129,
+  "unit": "\u00b5m",
+  "density_scale": 1000000.0,
+  "n_cells": 30000,
+  "n_selected": 4244,
+  "spatial_key": "spatial",
+  "table": null,
+  "element": null,
+  "coordinate_system": null,
+  "value": null,
+  "layer": null,
+  "color": null,
+  "groupby": "cell_type",
+  "groups": [
+    "T cell"
+  ],
+  "label": "T cell \u00b7 fraction",
+  "render": {
+    "preset": "glacier",
+    "height": 0.16,
+    "transform": "linear",
+    "vmax": 1,
+    "clim": [
+      0,
+      1
+    ],
+    "cmap": null,
+    "contours": 8,
+    "skirt": false,
+    "footprint": true,
+    "footprint_color": "#d6d6d6",
+    "footprint_gap": 0.06,
+    "title": "Local T-cell fraction \u00b7 Synthetic tissue",
+    "height_label": null,
+    "background": "white",
+    "axes": false,
+    "scalar_bar": true,
+    "scalar_bar_title": null,
+    "image_coordinates": true,
+    "off_screen": true,
+    "window_size": [
+      1200,
+      900
+    ],
+    "show": false,
+    "transparent_background": false
+  },
+  "scalps_version": "0.1.0",
+  "value_range": [
+    0.0,
+    0.9431249051154033
+  ]
+}

@@ -19,8 +19,13 @@ Do not normalize expression implicitly or mutate input objects. Test weighted
 aggregation, missing/zero/signed values, sparse inputs and instance alignment
 when changing those paths.
 
-`examples/gallery.py` regenerates documentation images from seeded synthetic
-data. Keep real datasets in ignored `data/`, and local exports in `outputs/`.
+`examples/gallery.py` regenerates the landing-page images from seeded synthetic
+data. `examples/recipes.py` renders the ten illustrated recipe panels and JSON
+settings into `docs/assets/recipes/`; `--exports` also exercises PNG transparency,
+HTML, GIF, NPZ and VTP in `outputs/recipes/` (requires the `notebook` extra).
+When changing a recipe, update its documentation and script together and
+regenerate the affected gallery. Keep real datasets in ignored `data/`, and
+local exports in `outputs/`.
 GitHub Actions tests Python 3.11 and 3.12, checks dependency consistency, and
 builds the package. A separate documentation job uses the same requirements
 as Read the Docs, without installing scAlps or its rendering dependencies.
