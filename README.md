@@ -2,6 +2,10 @@
   <img src="docs/assets/scalps-logo.png" alt="scAlps — spatial single-cell terrain" width="520">
 </p>
 
+[![Documentation Status](https://app.readthedocs.org/projects/scalps/badge/?version=latest)](https://scalps.readthedocs.io/en/latest/)
+
+[Documentation](https://scalps.readthedocs.io/en/latest/) · [API reference](https://scalps.readthedocs.io/en/latest/api/) · [Recipes](https://scalps.readthedocs.io/en/latest/recipes/)
+
 **Your tissue has a landscape. Go explore it.**
 
 Turn spatial single-cell data into mountains, valleys and islands with PyVista.
@@ -151,8 +155,8 @@ coordinate extent also matters; see [the method](docs/method.md).
 
 ## Learn more
 
-[Quickstart](docs/index.md) · [Recipes](docs/recipes.md) ·
-[API](docs/api.md) · [Method & limitations](docs/method.md) ·
+[Quickstart](https://scalps.readthedocs.io/en/latest/) · [Recipes](https://scalps.readthedocs.io/en/latest/recipes/) ·
+[API](https://scalps.readthedocs.io/en/latest/api/) · [Method & limitations](https://scalps.readthedocs.io/en/latest/method/) ·
 [Example notebook](examples/quickstart.ipynb)
 
 ```bash
@@ -162,7 +166,7 @@ mkdocs serve
 ```
 
 This is an early research tool; no PyPI release is configured. Documentation
-is ready for Read the Docs using [the hosting setup](CONTRIBUTING.md#read-the-docs).
+is hosted on [Read the Docs](https://scalps.readthedocs.io/en/latest/).
 Built on [PyVista](https://docs.pyvista.org/),
 [AnnData](https://anndata.readthedocs.io/), and
 [SpatialData](https://spatialdata.scverse.org/).

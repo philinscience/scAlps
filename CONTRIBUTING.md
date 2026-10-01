@@ -29,6 +29,9 @@ with SpatialData `<0.8`. Upgrade and validate these dependencies together.
 
 ## Read the Docs
 
+The live documentation is at [scalps.readthedocs.io](https://scalps.readthedocs.io/en/latest/).
+The README badge reports the build status of the `latest` version.
+
 The repository includes `.readthedocs.yaml` for MkDocs on Python 3.12, with
 strict warning checks and pinned documentation tools in `docs/requirements.txt`.
 The gallery is committed synthetic data; documentation builds do not load
@@ -46,8 +49,8 @@ For the one-time hosting setup, [import the repository into Read the Docs](https
 Select `philinscience/scAlps`, use `main` as the default branch, and keep the
 configuration path `.readthedocs.yaml`. Trigger the first `latest` build and
 verify the GitHub integration/webhook so subsequent pushes rebuild the docs.
-After it succeeds, add the assigned documentation URL to the README and
-the GitHub repository's website field. The site takes its canonical URL from
+For a fork, update the documentation URL and badge project slug in the README
+and the GitHub repository's website field. The site takes its canonical URL from
 `READTHEDOCS_CANONICAL_URL`, so it also works if the assigned project slug differs.
 
 See the [Read the Docs MkDocs guide](https://docs.readthedocs.com/platform/stable/intro/mkdocs.html)
