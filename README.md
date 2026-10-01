@@ -1,4 +1,6 @@
-# scAlps
+<p align="center">
+  <img src="docs/assets/scalps-logo.png" alt="scAlps — spatial single-cell terrain" width="520">
+</p>
 
 **Your tissue has a landscape. Go explore it.**
 

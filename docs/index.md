@@ -1,3 +1,5 @@
+<img src="assets/scalps-logo.png" alt="scAlps — spatial single-cell terrain" width="520">
+
 # Your tissue has a landscape
 
 scAlps turns spatial single-cell measurements into explorable 3D terrain.

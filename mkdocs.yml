@@ -2,6 +2,8 @@ site_name: scAlps
 site_description: Your tissue has a landscape. Go explore it.
 theme:
   name: material
+  logo: assets/scalps-icon.png
+  favicon: assets/scalps-icon.png
   palette:
     scheme: slate
     primary: teal

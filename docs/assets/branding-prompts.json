@@ -1,0 +1,15 @@
+{
+  "generator": "Built-in image_gen tool",
+  "assets": {
+    "scalps-logo.png": {
+      "prompt": "Use case: logo-brand.\nCreate an original finished logo for scAlps, a Python scientific tool that turns spatial single-cell data into 3D terrain.\nAsset: a clean horizontal logo lockup for a GitHub README and documentation homepage.\nExact text: \"scAlps\" (lowercase s, lowercase c, uppercase A, lowercase l, p, s). Set it in a highly legible contemporary sans-serif, medium weight, dark charcoal. No slogan or other text.\nSymbol: a compact, distinctive alpine mountain silhouette built from three or four nested contour-like ribbons, with a small cluster of circular cell dots transitioning into its lower edge. Convey spatial cells becoming terrain, with strong shape clarity at small size. Keep it restrained and scientific, not a cartoon or scenic illustration.\nUse the project's existing muted teal and purple/coral terrain colors, with at most three flat colors in the symbol. Crisp flat vector-like geometry, clean negative space, no photorealism, no shadows, no glossy effects.\nComposition: symbol to the left, wordmark to the right, balanced baseline and comfortable separation. Tightly composed horizontal logo with modest even margins; no huge unused canvas. Transparent background with real alpha, not a checkerboard pattern. Original artwork; no additional badges, labels, borders, mockups or watermark.",
+      "final_edit_prompt": "Use case: precise-object-edit. Turn this exact scAlps logo into a clean final logo on a SOLID PURE WHITE (#ffffff) background, fully opaque, no transparency. Keep the exact scAlps text, dark charcoal lettering, layout and teal/purple/coral mountain symbol with cell dots. Remove stray colored flecks or halos outside the contours. Crisp clean flat design, no texture, no gradients, no shadows. Preserve a horizontal aspect ratio and modest margins, with the entire mark and all lettering visible. This is a white-backed logo asset for a scientific software README, not a mockup. No other text.",
+      "background": "White"
+    },
+    "scalps-icon.png": {
+      "prompt": "Use case: precise-object-edit. Derive a compact square icon from this scAlps logo. Retain only the mountain/contour/cell-dot symbol from the left; remove the wordmark completely. Preserve the exact geometry, teal/purple/coral colors and orientation of the existing symbol. Center the complete symbol in a square canvas with a modest margin, filling about 85% of the width. True transparent alpha background. Do not add anything or redesign the mark. Intended for documentation header and favicon.",
+      "background": "Transparent",
+      "reference": "Original generated scAlps logo"
+    }
+  }
+}
