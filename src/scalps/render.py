@@ -48,6 +48,9 @@ def plot(
     cmap=None,
     contours=12,
     skirt=True,
+    footprint=True,
+    footprint_color="#d6d6d6",
+    footprint_gap=0.06,
     title=None,
     background="white",
     axes=False,
@@ -72,6 +75,8 @@ def plot(
 
     if preset not in PRESETS:
         raise ValueError(f"Unknown preset {preset!r}; choose from {list(PRESETS)}.")
+    if not np.isfinite(footprint_gap) or footprint_gap <= 0:
+        raise ValueError("footprint_gap must be finite and positive.")
     if isinstance(data, Terrain):
         if value is not None or terrain_kwargs:
             raise ValueError("Aggregation arguments cannot be applied to an existing Terrain.")
@@ -113,6 +118,32 @@ def plot(
         show_scalar_bar=False,
     )
     span = max(np.ptp(landscape.x), np.ptp(landscape.y))
+    if footprint:
+        # Below both valleys and any decorative skirt; colors encode no extra data.
+        floor_z = min(0, mesh.bounds[4]) - span * (footprint_gap + (0.035 if skirt else 0))
+        floor = landscape.footprint(z=floor_z)
+        if image_coordinates:
+            floor.points[:, 1] *= -1
+            floor.flip_faces(inplace=True)
+        p.add_mesh(
+            floor,
+            color=footprint_color,
+            lighting=False,
+            show_scalar_bar=False,
+            name="tissue-footprint",
+        )
+        outline = floor.extract_feature_edges(
+            boundary_edges=True, feature_edges=False, manifold_edges=False, non_manifold_edges=False
+        )
+        if outline.n_points:
+            p.add_mesh(
+                outline,
+                color="#999999",
+                line_width=1,
+                lighting=False,
+                show_scalar_bar=False,
+                name="tissue-footprint-outline",
+            )
     if skirt:
         # Build a vertical curtain from each boundary edge to a common base plane.
         boundary = mesh.extract_feature_edges(
@@ -210,14 +241,20 @@ def plot(
     return p
 
 
-def save(landscape, path, *, frames=90, fps=24, transparent_background=False, **kwargs):
+def save(landscape, path, *, frames=360, fps=15, transparent_background=False, **kwargs):
     """Write an export and a JSON sidecar recording scientific and visual settings."""
     path = Path(path)
     suffix = path.suffix.lower()
     if suffix not in {".npz", ".vtp", ".png", ".html", ".gif"}:
         raise ValueError("Choose .png, .html, .gif, .vtp or .npz.")
-    if suffix == ".gif" and (frames < 2 or fps <= 0):
-        raise ValueError("GIF exports need frames >= 2 and fps > 0.")
+    if suffix == ".gif" and (
+        isinstance(frames, bool)
+        or not isinstance(frames, (int, np.integer))
+        or frames < 2
+        or not np.isfinite(fps)
+        or fps <= 0
+    ):
+        raise ValueError("GIF exports need an integer frames >= 2 and finite fps > 0.")
     if transparent_background and suffix != ".png":
         raise ValueError("Transparent backgrounds are supported for PNG exports only.")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -229,6 +266,7 @@ def save(landscape, path, *, frames=90, fps=24, transparent_background=False, **
             values=landscape.values,
             mask=landscape.mask,
             counts=landscape.counts,
+            tissue_mask=landscape.mask if landscape.tissue_mask is None else landscape.tissue_mask,
         )
     elif suffix == ".vtp":
         landscape.mesh(**kwargs).save(path)
@@ -269,7 +307,7 @@ def save(landscape, path, *, frames=90, fps=24, transparent_background=False, **
         value_range=[float(np.nanmin(landscape.values)), float(np.nanmax(landscape.values))],
     )
     if suffix == ".gif":
-        metadata.update(frames=frames, fps=fps)
+        metadata.update(frames=frames, fps=fps, orbit_seconds=frames / fps)
     path.with_suffix(path.suffix + ".json").write_text(
         json.dumps(metadata, indent=2, default=str) + "\n"
     )

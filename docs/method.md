@@ -23,14 +23,27 @@ different cell counts. Zero measurements are valid and retained.
 
 ## Tissue support
 
-The footprint is `G(C > 0) >= support`. Unsupported values are stored as NaN;
+The initial footprint is `G(C > 0) >= support`. By default, it is intersected
+with `G(C) >= cutoff`, where `cutoff` is the first percentile of `G(C)` sampled
+at the input cell locations. Each cell contributes one sample, including cells
+sharing a bin. This avoids letting empty grid area dominate the percentile.
+Use `density_percentile=0` to disable this step, or choose another percentile.
+
+The cutoff depends on all cells, independently of genes and selected groups.
+It trims display support; it does not delete cells from the input or recompute
+the smoothed values after exclusion. The fraction of removed grid area need
+not be 1%. Density ties may also mean fewer than 1% of cells fall strictly below
+the cutoff. True low-density tissue can be hidden too; this is not cell QC.
+
+Unsupported values are stored as NaN;
 quads touching unsupported vertices are removed from the surface. This is a
 sampling-based approximation, not a segmentation mask. Tiny holes and nearby
 islands may merge with smoothing. Large gaps remain empty. Mean fields also
 require local valid-value support; selected-cell means can have a smaller footprint.
 
-Changing resolution, smoothing, or support changes this approximation. A low
-cell count or an excessively fine grid may need a lower `support`. Density
+Changing resolution, smoothing, support or the density percentile changes this
+approximation. A low cell count or an excessively fine grid may need a lower
+`support`, a lower `density_percentile`, or more smoothing. Density
 does not divide by occupancy; edge density can decrease because there are no
 cells outside tissue. Exported masked values are not a mass-conserving estimate.
 
@@ -52,6 +65,12 @@ produce valleys; constant zeros remain flat. `vmax` overrides the scale.
 Colors always encode raw aggregated values. `clim` affects color scaling only.
 
 Skirts are decorative vertical edges; they are not a watertight solid model.
+The optional gray reference layer is a flat copy of the cleaned all-cell tissue
+footprint, positioned below the lowest terrain/skirt point. It uses the same
+x/y coordinates and preserves holes. For selected-cell means, it can extend
+beyond the colored terrain's valid-value support. Its vertical offset is for
+visual separation, not a physical distance. VTP export contains only the
+colored surface; call `Terrain.footprint()` to obtain the flat reference mesh.
 Mesh export preserves the original x/y coordinates. Plotting defaults to
 image-style y direction, which is recorded with other render settings.
 

@@ -15,5 +15,5 @@ for preset, value, title in [
     mountain.save(out / f"{preset}.png", preset=preset, title=title)
 
 mountain = sca.terrain(adata, "MKI67", resolution=160, smooth=2)
-mountain.save(out / "orbit.gif", preset="ember", frames=48, fps=16, window_size=(700, 500))
+mountain.save(out / "orbit.gif", preset="ember", window_size=(700, 500))
 mountain.save("outputs/demo.html", preset="ember")

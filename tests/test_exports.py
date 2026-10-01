@@ -12,6 +12,7 @@ def test_numerical_export(tmp_path):
     target = t.save(tmp_path / "terrain.npz")
     with np.load(target) as loaded:
         np.testing.assert_allclose(loaded["values"], t.values)
+        np.testing.assert_array_equal(loaded["tissue_mask"], t.tissue_mask)
     meta = json.loads(target.with_suffix(".npz.json").read_text())
     assert meta["n_cells"] == 1000
     assert t.save(tmp_path / "terrain.vtp").stat().st_size > 1000
@@ -46,3 +47,15 @@ def test_html_gif(tmp_path):
     gif = t.save(tmp_path / "terrain.gif", frames=4, fps=4, window_size=(320, 240))
     with Image.open(gif) as im:
         assert im.n_frames == 4
+        assert sum(im.seek(i) or im.info["duration"] for i in range(im.n_frames)) == 1000
+
+
+def test_footprint_below_signed_terrain():
+    t = sca.terrain(sca.demo(2000), "immune_balance", resolution=40)
+    p = t.plot(show=False, off_screen=True)
+    try:
+        floor = p.actors["tissue-footprint"].mapper.dataset
+        assert np.ptp(floor.points[:, 2]) == 0
+        assert floor.bounds[5] < t.mesh().bounds[4]
+    finally:
+        p.close()

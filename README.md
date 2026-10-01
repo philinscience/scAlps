@@ -51,7 +51,7 @@ mountain = sca.terrain(adata, "MKI67", resolution=300, smooth=2.5)
 mountain.plot(preset="ember")
 mountain.save("outputs/mki67.png", preset="ember")
 mountain.save("outputs/mki67.html", preset="ember")  # interactive, notebook extra
-mountain.save("outputs/mki67.gif", preset="ember", frames=90)
+mountain.save("outputs/mki67.gif", preset="ember")  # slow orbit, about 24 seconds
 ```
 
 Or `scalps demo --value MKI67 --preset ember -o outputs/demo.png`.
@@ -79,6 +79,12 @@ a diverging colormap. Customize `cmap`, `height`, `clim`, `vmax`, `contours`, an
 mountain.save("outputs/figure.png", transparent_background=True)
 mountain.plot(scalar_bar_title="Mean expression (log-normalized)", skirt=False)
 ```
+
+The default view includes a flat gray tissue footprint below the terrain.
+Hide it with `footprint=False`, or adjust `footprint_color` and `footprint_gap`.
+Sparse surroundings are trimmed using `density_percentile=1` of all-cell local
+density; use `sca.terrain(adata, "MKI67", density_percentile=0)` to disable this.
+The cutoff is independent of the gene or selected cell type.
 
 For real Xenium data, [examples/xenium.py](examples/xenium.py) renders gene and
 cell-density panels from an h5ad file. It loads selected genes from the supplied
@@ -110,10 +116,11 @@ coordinate extent also matters; see [the method](docs/method.md).
   contribute to neither. Real zeros remain zeros.
 - Density is Gaussian-smoothed cell count per area, not occupancy-normalized.
   The default is cells/mm² for micrometer coordinates.
-- Tissue support comes from all-cell occupancy. Large empty gaps are removed;
+- Tissue support comes from all-cell occupancy and a default first-percentile
+  density cutoff sampled at cell locations. Large empty gaps are removed;
   nearby regions can merge at the chosen smoothing scale.
 - Genes are sliced before materialization, so sparse expression stays practical.
-- Exports include JSON settings; `.npz` keeps values, support, counts and coordinates.
+- Exports include JSON settings; `.npz` keeps values, both support masks, counts and coordinates.
 
 ## Learn more
 

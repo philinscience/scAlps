@@ -2,6 +2,9 @@
   "statistic": "density",
   "smooth": 3.0,
   "support": 0.02,
+  "density_percentile": 1.0,
+  "density_cutoff": 184.37212287246984,
+  "n_low_density_cells": 300,
   "resolution": 300,
   "spacing": 18.48144108989616,
   "unit": "\u00b5m",
@@ -26,6 +29,9 @@
     "cmap": null,
     "contours": 12,
     "skirt": true,
+    "footprint": true,
+    "footprint_color": "#d6d6d6",
+    "footprint_gap": 0.06,
     "title": "Cell density \u00b7 Synthetic tissue",
     "background": "white",
     "axes": false,
@@ -42,7 +48,7 @@
   },
   "scalps_version": "0.1.0",
   "value_range": [
-    58.56026464772628,
+    184.37218692079546,
     6772.493718815123
   ]
 }

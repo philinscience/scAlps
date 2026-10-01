@@ -30,7 +30,7 @@ mountain = sca.terrain(adata, "MKI67", resolution=300, smooth=2.5)
 mountain.plot(preset="alpine")
 mountain.save("outputs/mountain.png", preset="ember")
 mountain.save("outputs/mountain.html", preset="ember")
-mountain.save("outputs/mountain.gif", preset="ember", frames=90, fps=24)
+mountain.save("outputs/mountain.gif", preset="ember")  # ~24 seconds per revolution
 mountain.save("outputs/mountain.npz")
 mountain.save("outputs/mountain.vtp")
 ```
@@ -48,6 +48,8 @@ HTML is an interactive standalone scene (rotate, zoom, pan). It needs the
 These images use synthetic data. Their height represents measurements, not anatomy.
 All presets use white backgrounds and regular sans-serif legends. Use
 `mountain.save("figure.png", transparent_background=True)` for a transparent PNG.
+By default, sparse outskirts are trimmed and a flat gray tissue footprint is
+drawn beneath the relief. Control these with `density_percentile` and `footprint`.
 See [real Xenium examples and figure styling](recipes.md) for plots from your data.
 
 ## Running on servers and in notebooks

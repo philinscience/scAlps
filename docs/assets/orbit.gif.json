@@ -2,6 +2,9 @@
   "statistic": "mean",
   "smooth": 2.0,
   "support": 0.02,
+  "density_percentile": 1.0,
+  "density_cutoff": 176.79241322616514,
+  "n_low_density_cells": 300,
   "resolution": 160,
   "spacing": 34.754408087289,
   "unit": "\u00b5m",
@@ -26,6 +29,9 @@
     "cmap": null,
     "contours": 12,
     "skirt": true,
+    "footprint": true,
+    "footprint_color": "#d6d6d6",
+    "footprint_gap": 0.06,
     "title": null,
     "background": "white",
     "axes": false,
@@ -44,6 +50,7 @@
     0.0,
     14.605841322224
   ],
-  "frames": 48,
-  "fps": 16
+  "frames": 360,
+  "fps": 15,
+  "orbit_seconds": 24.0
 }

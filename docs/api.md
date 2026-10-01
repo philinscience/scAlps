@@ -15,11 +15,15 @@
 | `resolution` | `250` | Longest unpadded grid dimension, 16–2000 |
 | `smooth` | `2.0` | Gaussian sigma in pixels; zero disables smoothing |
 | `support` | `0.02` | Minimum smoothed occupancy |
+| `density_percentile` | `1.0` | Hide regions below this all-cell density percentile sampled at cells; 0 disables |
 | `unit` | `"µm"` | Coordinate label; does not convert coordinates |
 | `density_scale` | `1_000_000` | Multiplier for cells per coordinate-unit² |
 
-`Terrain` exposes `x`, `y`, `values`, `mask`, `counts`, `label`, and `metadata`.
+`Terrain` exposes `x`, `y`, `values`, `mask`, `tissue_mask`, `counts`, `label`, and `metadata`.
 Arrays use `(x, y)` indexing. `counts` is the unsmoothed all-cell histogram.
+`tissue_mask` is the cleaned all-cell footprint; `mask` also requires valid feature
+support. Metadata records the percentile, density cutoff in configured density
+units, and number of cells whose local density falls below the cutoff.
 Input objects are never modified.
 
 ## `scalps.plot(data, value=None, **options) -> pyvista.Plotter`
@@ -35,6 +39,9 @@ Accepts the above data options or a prebuilt `Terrain`.
 | `clim`, `cmap` | automatic | Raw color limits and colormap |
 | `contours` | `12` | Contour count; 0 disables |
 | `skirt` | `True` | Draw decorative cutaway sides |
+| `footprint` | `True` | Draw a flat gray all-cell tissue footprint beneath the terrain |
+| `footprint_color` | `"#d6d6d6"` | Flat tissue color |
+| `footprint_gap` | `0.06` | Gap below terrain/skirt as a fraction of longest padded extent |
 | `title` | value label | Figure title |
 | `background` | `"white"` | Background for all presets |
 | `axes` | `False` | Show coordinate bounds |
@@ -47,6 +54,7 @@ Accepts the above data options or a prebuilt `Terrain`.
 
 `Terrain.plot()` accepts the visual options. `Terrain.mesh(height=0.22,
 vmax=None, transform="linear")` returns the terrain surface.
+`Terrain.footprint(z=0)` returns the flat, cleaned all-cell tissue mesh at a chosen z.
 
 ## `Terrain.save(path, **options) -> pathlib.Path`
 
@@ -54,7 +62,10 @@ PNG, HTML and GIF accept visual options except `show`/`off_screen` (set internal
 PNG additionally accepts `transparent_background=True` to write an RGBA image.
 Other formats reject transparency. Figures use regular DejaVu Sans, no watermark,
 and a legend panel below the 3D view. `title=""` hides the figure title.
-GIF adds `frames=90, fps=24`. HTML requires the notebook extra.
+GIF adds `frames=360, fps=15`: one slow revolution in about 24 seconds. GIF frame
+delays are quantized to centiseconds by the encoder. Use `frames` and `fps` to
+control the speed; more frames at the same fps make a slower, smoother orbit.
+HTML requires the notebook extra.
 VTP accepts only `mesh()` options. NPZ stores the arrays directly.
 Files are overwritten when their path already exists. A settings JSON sidecar
 is written next to every successful export.
@@ -67,7 +78,7 @@ Synthetic lobed tissue with sparse genes `MKI67`, `CD3D`, `EPCAM`, cell types
 ## CLI
 
 `scalps INPUT [--value KEY] [--groupby COLUMN --groups GROUP ...]
-[--layer LAYER] [--resolution N] [--smooth SIGMA] [--preset PRESET]
+[--layer LAYER] [--resolution N] [--smooth SIGMA] [--density-percentile P] [--preset PRESET]
 [-o OUTPUT]`
 
 INPUT is an `.h5ad` file or `demo`. Without output, an interactive plot opens.

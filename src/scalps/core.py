@@ -20,11 +20,33 @@ class Terrain:
     counts: np.ndarray
     label: str
     metadata: dict = field(default_factory=dict)
+    tissue_mask: np.ndarray | None = None
+
+    def _surface(self, z, mask, values=None):
+        import pyvista as pv
+
+        xx, yy = np.meshgrid(self.x, self.y, indexing="ij")
+        grid = pv.StructuredGrid(xx, yy, z)
+        if values is not None:
+            grid.point_data["value"] = values.ravel(order="F")
+        grid.point_data["support"] = mask.astype(float).ravel(order="F")
+        surface = grid.threshold(0.5, scalars="support", preference="point", all_scalars=True)
+        if not surface.n_cells:
+            raise ValueError(
+                "No connected terrain; increase smooth, reduce resolution/support, "
+                "or lower density_percentile."
+            )
+        return surface.extract_surface(algorithm="dataset_surface").triangulate()
+
+    def footprint(self, *, z=0.0):
+        """Return the flat all-cell tissue outline, including density-based trimming."""
+        if not np.isfinite(z):
+            raise ValueError("z must be finite.")
+        mask = self.mask if self.tissue_mask is None else self.tissue_mask
+        return self._surface(np.full_like(self.values, z), mask)
 
     def mesh(self, *, height=0.22, vmax=None, transform="linear"):
         """Create a PyVista surface. Height affects geometry; scalar colors remain raw."""
-        import pyvista as pv
-
         if not np.isfinite(height) or height < 0:
             raise ValueError("height must be finite and nonnegative.")
         if transform not in {"linear", "sqrt", "log1p"}:
@@ -40,15 +62,8 @@ class Terrain:
         elif transform == "log1p":
             z = np.sign(z) * np.log1p(9 * np.abs(z)) / np.log(10)
         z *= max(np.ptp(self.x), np.ptp(self.y)) * height
-        xx, yy = np.meshgrid(self.x, self.y, indexing="ij")
-        grid = pv.StructuredGrid(xx, yy, z)
-        grid.point_data["value"] = raw.ravel(order="F")
-        grid.point_data["support"] = self.mask.astype(float).ravel(order="F")
         # Drop quads touching unsupported vertices; no bridges across large tissue gaps.
-        surface = grid.threshold(0.5, scalars="support", preference="point", all_scalars=True)
-        if not surface.n_cells:
-            raise ValueError("No connected terrain; increase smooth or reduce resolution/support.")
-        return surface.extract_surface(algorithm="dataset_surface").triangulate()
+        return self._surface(z, self.mask, raw)
 
     def plot(self, **kwargs):
         """Build a styled PyVista plotter; see scalps.plot."""
@@ -78,6 +93,7 @@ def terrain(
     resolution=250,
     smooth=2.0,
     support=0.02,
+    density_percentile=1.0,
     unit="µm",
     density_scale=1_000_000.0,
 ):
@@ -88,6 +104,8 @@ def terrain(
     Density defaults to cells/mm² when coordinates are micrometers. Means use
     smoothed sums / smoothed valid counts, rather than means of occupied bins.
     ``groups`` selects cells but retains the full tissue footprint.
+    ``density_percentile`` hides regions below this percentile of smoothed
+    all-cell density sampled at cell locations. Set to 0 to disable trimming.
     """
     if isinstance(resolution, bool) or not isinstance(resolution, (int, np.integer)):
         raise ValueError("resolution must be an integer between 16 and 2000.")
@@ -97,6 +115,8 @@ def terrain(
         raise ValueError("smooth must be finite and nonnegative.")
     if not np.isfinite(support) or not 0 < support <= 1:
         raise ValueError("support must be in (0, 1].")
+    if not np.isfinite(density_percentile) or not 0 <= density_percentile < 100:
+        raise ValueError("density_percentile must be in [0, 100).")
     if not np.isfinite(density_scale) or density_scale <= 0:
         raise ValueError("density_scale must be finite and positive.")
     adata, xy = resolve(data, spatial_key, table, element, coordinate_system)
@@ -137,13 +157,24 @@ def terrain(
     blur = lambda a: gaussian_filter(a, smooth, mode="constant")  # noqa: E731
     counts = hist(xy)
     occupancy = blur((counts > 0).astype(float))
-    mask = occupancy >= support
+    tissue_mask = occupancy >= support
+    total = blur(counts)
+    cutoff = 0.0
+    n_low_density = 0
+    if density_percentile > 0:
+        # Sample at cells (not empty grid bins), so large empty surroundings cannot
+        # force the percentile toward zero. The same filter applies to every gene/group.
+        ix, iy = [np.searchsorted(edges[i], xy[:, i], side="right") - 1 for i in range(2)]
+        local_density = total[ix, iy]
+        cutoff = float(np.percentile(local_density, density_percentile))
+        tissue_mask &= total >= cutoff
+        n_low_density = int(np.count_nonzero(local_density < cutoff))
+    mask = tissue_mask.copy()
     denominator = blur(hist(xy[selected]))
     if statistic == "density":
         result = denominator * density_scale / spacing**2
         label += " · cells/mm²" if unit == "µm" and density_scale == 1e6 else " · density"
     elif statistic == "fraction":
-        total = blur(counts)
         result = np.divide(denominator, total, out=np.zeros_like(total), where=total > 1e-12)
         label += " · fraction"
     else:
@@ -171,6 +202,9 @@ def terrain(
             statistic=statistic,
             smooth=float(smooth),
             support=float(support),
+            density_percentile=float(density_percentile),
+            density_cutoff=cutoff * density_scale / spacing**2,
+            n_low_density_cells=n_low_density,
             resolution=int(resolution),
             spacing=float(spacing),
             unit=unit,
@@ -186,4 +220,5 @@ def terrain(
             groupby=groupby,
             groups=None if groups is None else list(map(str, groups)),
         ),
+        tissue_mask=tissue_mask,
     )

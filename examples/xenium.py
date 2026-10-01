@@ -27,6 +27,10 @@ def main():
     parser.add_argument("--layer", default="log1p_norm")
     parser.add_argument("--unit", default="native coordinate units")
     parser.add_argument("--density-scale", type=float, default=1)
+    parser.add_argument("--density-percentile", type=float, default=1)
+    parser.add_argument(
+        "--gif", action="store_true", help="Also render a slow orbit of the first gene"
+    )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     with h5py.File(args.input, "r") as handle:
@@ -40,7 +44,13 @@ def main():
         adata.obsm["spatial"] = handle["obsm/spatial"][:]
         adata.layers[args.layer] = matrix
     sample = str(adata.obs["sample"].iloc[0]) if "sample" in adata.obs else args.input.stem
-    settings = dict(resolution=400, smooth=2.5, unit=args.unit, density_scale=args.density_scale)
+    settings = dict(
+        resolution=400,
+        smooth=2.5,
+        unit=args.unit,
+        density_scale=args.density_scale,
+        density_percentile=args.density_percentile,
+    )
     visual = dict(height=0.16, skirt=False, contours=8, window_size=(1600, 1200))
     density_unit = (
         "cells/mm²"
@@ -79,6 +89,14 @@ def main():
                 transparent_background=True,
                 **visual,
             )
+            if args.gif:
+                path = mountain.save(
+                    args.output / f"{gene}.gif",
+                    preset="ember",
+                    title=f"{sample} · {gene}",
+                    **dict(visual, window_size=(800, 600)),
+                )
+                print(path, flush=True)
     mountain = sca.terrain(adata, **settings)
     path = mountain.save(
         args.output / "cell_density.png",

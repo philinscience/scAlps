@@ -130,3 +130,39 @@ def test_demo_reproducible():
     a, b = sca.demo(1000), sca.demo(1000)
     np.testing.assert_array_equal(a.obsm["spatial"], b.obsm["spatial"])
     assert (a.X != b.X).nnz == 0
+
+
+def test_sparse_outskirts_trimmed_without_filtering_rare_types_or_zero_genes():
+    rng = np.random.default_rng(31)
+    xy = np.vstack([rng.normal(size=(3000, 2)), [[12.0, 12.0], [-12.0, -12.0]]])
+    a = AnnData(np.zeros((len(xy), 1)), var=pd.DataFrame(index=["zero"]))
+    a.obsm["spatial"] = xy
+    a.obs["type"] = np.where(np.arange(len(xy)) == 0, "rare", "other")
+    untrimmed = sca.terrain(a, resolution=100, density_percentile=0, support=0.001)
+    trimmed = sca.terrain(a, resolution=100, support=0.001)
+    rare = sca.terrain(a, groupby="type", groups="rare", resolution=100, support=0.001)
+    zero = sca.terrain(a, "zero", resolution=100, support=0.001)
+    edge = (np.argmin(abs(trimmed.x - 12)), np.argmin(abs(trimmed.y - 12)))
+    assert untrimmed.mask[edge] and not trimmed.mask[edge]
+    assert 0 < trimmed.metadata["n_low_density_cells"] <= 31
+    np.testing.assert_array_equal(trimmed.mask, rare.mask)
+    np.testing.assert_array_equal(trimmed.tissue_mask, zero.tissue_mask)
+    assert np.max(rare.values[rare.mask]) > 0
+    assert np.all(zero.values[zero.mask] == 0)
+    # Trimming only changes display support, not the estimated field in retained tissue.
+    np.testing.assert_allclose(trimmed.values[trimmed.mask], untrimmed.values[trimmed.mask])
+
+
+def test_footprint_retains_all_tissue_for_selected_cell_mean():
+    a = tissue()
+    t = sca.terrain(a, "score", groupby="type", groups="A", resolution=40, smooth=2)
+    assert t.tissue_mask.sum() > t.mask.sum()
+    floor = t.footprint(z=-3)
+    np.testing.assert_array_equal(floor.points[:, 2], -3)
+    assert floor.bounds[1] > t.mesh().bounds[1]
+
+
+@pytest.mark.parametrize("percentile", [-1, 100, np.nan])
+def test_invalid_density_percentile(percentile):
+    with pytest.raises(ValueError, match="density_percentile"):
+        sca.terrain(tissue(), density_percentile=percentile)

@@ -20,13 +20,14 @@ active renderer is the terrain, so camera customization still works normally.
 ## Real Xenium h5ad example
 
 ```bash
-python examples/xenium.py /path/to/GS52_spatial.h5ad --output outputs/GS52
+python examples/xenium.py /path/to/GS52_spatial.h5ad --output outputs/GS52 --gif
 ```
 
 This example plots `Mki67`, `Krt19`, and `Cd3e` from the supplied `log1p_norm`
 layer, all-cell density, and T-cell density when the expected `Level_2`
 annotation is present. It includes a transparent PNG and a source/settings
-manifest. Use `--genes` and `--layer` to select other genes or layers.
+manifest. `--gif` adds a slow orbit of the first gene. Use `--genes` and `--layer`
+to select other genes or layers, or `--density-percentile 0` to disable trimming.
 
 The script reads only the requested sparse gene columns, cell metadata, and
 coordinates. It does not change the source file, normalize expression, or
@@ -37,6 +38,28 @@ Coordinate units default to **native coordinate units**. A key called
 to be micrometers, pass `--unit µm --density-scale 1000000` to report cells/mm².
 The file's layer name is retained in the legend rather than implying that
 log-normalized values are raw transcript counts.
+
+## Sparse outskirts and flat tissue reference
+
+```python
+# Default: trim the lowest 1% of local all-cell densities sampled at cells.
+mountain = sca.terrain(adata, "Mki67", density_percentile=1)
+mountain.plot(footprint=True, footprint_color="#d6d6d6", footprint_gap=0.06)
+
+# Show the original support, or omit the reference layer.
+untrimmed = sca.terrain(adata, "Mki67", density_percentile=0)
+untrimmed.plot(footprint=False)
+
+mountain.save("outputs/slow.gif")  # ~24-second orbit
+mountain.save("outputs/slower.gif", frames=480, fps=10)  # 48 seconds
+```
+
+Trimming is based on all cells, not low expression or the density of a selected
+cell type. Thus rare T cells inside well-sampled tissue remain visible. The gray
+layer uses the same cleaned all-cell footprint for all genes and cell types,
+including regions where a selected-cell mean has no valid measurements. It sits
+below the lowest valley and any skirt, preserving x/y alignment and tissue holes.
+It is a spatial reference, not another measurement or a physical tissue height.
 
 ## Cell types and local fractions
 

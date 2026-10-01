@@ -15,6 +15,12 @@ def main():
     parser.add_argument("--layer")
     parser.add_argument("--resolution", type=int, default=250)
     parser.add_argument("--smooth", type=float, default=2)
+    parser.add_argument(
+        "--density-percentile",
+        type=float,
+        default=1,
+        help="Hide sparse tissue below this all-cell density percentile; 0 disables",
+    )
     parser.add_argument("--preset", choices=["alpine", "ember", "glacier"], default="alpine")
     parser.add_argument("--output", "-o", help=".png, .html, .gif, .vtp or .npz; omit to explore")
     args = parser.parse_args()
@@ -33,6 +39,7 @@ def main():
             layer=args.layer,
             resolution=args.resolution,
             smooth=args.smooth,
+            density_percentile=args.density_percentile,
         )
         if args.output:
             options = {} if args.output.endswith((".npz", ".vtp")) else {"preset": args.preset}
