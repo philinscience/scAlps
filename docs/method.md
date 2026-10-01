@@ -64,6 +64,19 @@ scale, clipped to [-1, 1], optionally transformed, then multiplied by
 produce valleys; constant zeros remain flat. `vmax` overrides the scale.
 Colors always encode raw aggregated values. `clim` affects color scaling only.
 
+By default, color uses the same field as height. With `color=...`, a second
+field is computed on the identical grid and among the same selected groups.
+Its default mean is `G(S_color) / G(N_color)`; `color_statistic="sum"` uses
+`G(S_color)`. `N_color` counts only finite color measurements, independently
+of missing height measurements. Color support requires `G(N_color) > 1e-12`
+within height support. Undefined color is NaN and rendered gray; it does not
+change the height field or remove geometry. Real zeros contribute to the mean.
+The finite Gaussian neighborhood can include very few cells; no minimum-cell
+confidence filter or uncertainty estimate is implied by a visible color.
+Contours always trace height values, and the color bar describes only color.
+Height and color can encode different biological quantities, but neither adds
+information beyond the supplied data and chosen spatial aggregation.
+
 Skirts are decorative vertical edges; they are not a watertight solid model.
 The optional gray reference layer is a flat copy of the cleaned all-cell tissue
 footprint, positioned below the lowest terrain/skirt point. It uses the same

@@ -9,6 +9,9 @@
 | `statistic` | inferred | `density`, `mean`, `sum`, `fraction` |
 | `groupby`, `groups` | `None` | obs column and selected category/categories |
 | `layer` | `None` | Expression layer; default uses X |
+| `color` | `None` | Independent gene, obs column or numeric array for color; omitted uses height values |
+| `color_layer` | `None` | Expression layer for color only; default uses X, independently of `layer` |
+| `color_statistic` | `"mean"` | `mean` or `sum` among the same selected cells; requires `color` for nondefault settings |
 | `spatial_key` | `"spatial"` | obsm coordinate key |
 | `table`, `element` | `None` | SpatialData table and spatial element |
 | `coordinate_system` | `"global"` | Target system for explicit element centroids |
@@ -25,6 +28,14 @@ Arrays use `(x, y)` indexing. `counts` is the unsmoothed all-cell histogram.
 support. Metadata records the percentile, density cutoff in configured density
 units, and number of cells whose local density falls below the cutoff.
 Input objects are never modified.
+
+For independent coloring, `color_values`, `color_mask` and `color_label` hold
+the second field (otherwise `None`). `values` and `mask` always describe height.
+`color_mask` requires finite color measurements within height support; missing
+color does not remove surface geometry. `metadata["color"]` records its source,
+layer, statistic and finite selected-cell count. Both fields share coordinates,
+population selection, resolution and smoothing. `gene:`/`obs:` prefixes and
+SpatialData element alignment apply to both inputs.
 
 ## `scalps.plot(data, value=None, **options) -> pyvista.Plotter`
 
@@ -43,6 +54,7 @@ Accepts the above data options or a prebuilt `Terrain`.
 | `footprint_color` | `"#d6d6d6"` | Flat tissue color |
 | `footprint_gap` | `0.06` | Gap below terrain/skirt as a fraction of longest padded extent |
 | `title` | value label | Figure title |
+| `height_label` | automatic | Height caption when using independent color |
 | `background` | `"white"` | Background for all presets |
 | `axes` | `False` | Show coordinate bounds |
 | `scalar_bar` | `True` | Show legend |
@@ -54,6 +66,8 @@ Accepts the above data options or a prebuilt `Terrain`.
 
 `Terrain.plot()` accepts the visual options. `Terrain.mesh(height=0.22,
 vmax=None, transform="linear")` returns the terrain surface.
+Its `value` point array always controls height; `color` is present when supplied.
+Contours follow `value`, even when color represents a different measurement.
 `Terrain.footprint(z=0)` returns the flat, cleaned all-cell tissue mesh at a chosen z.
 
 ## `Terrain.save(path, **options) -> pathlib.Path`
@@ -69,18 +83,22 @@ frames to preserve total duration. Use `frames` and `fps` to
 control the speed; more frames at the same fps make a slower, smoother orbit.
 HTML requires the notebook extra.
 VTP accepts only `mesh()` options. NPZ stores the arrays directly.
+Independent coloring adds `color_values` and `color_mask` to NPZ, `color` to VTP,
+and color-source metadata and `color_range` to the JSON sidecar.
 Files are overwritten when their path already exists. A settings JSON sidecar
 is written next to every successful export.
 
 ## `scalps.demo(n_cells=30_000, seed=7) -> AnnData`
 
 Synthetic lobed tissue with sparse genes `MKI67`, `CD3D`, `EPCAM`, cell types
-`Tumor`, `T cell`, `Stromal`, and scores `prolif_score`, `immune_balance`.
+`Tumor`, `T cell`, `Stromal`, and scores `prolif_score`, `immune_balance`, and
+`activation_score` (synthetic values in T cells; NaN in other cells).
 
 ## CLI
 
 `scalps INPUT [--value KEY] [--groupby COLUMN --groups GROUP ...]
 [--layer LAYER] [--resolution N] [--smooth SIGMA] [--density-percentile P] [--preset PRESET]
+[--color KEY] [--color-layer LAYER] [--color-statistic mean|sum]
 [-o OUTPUT]`
 
 INPUT is an `.h5ad` file or `demo`. Without output, an interactive plot opens.

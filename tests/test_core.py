@@ -91,8 +91,9 @@ def test_backed_sparse(tmp_path):
     tissue().write_h5ad(path)
     a = read_h5ad(path, backed="r")
     try:
-        t = sca.terrain(a, "G", resolution=30)
+        t = sca.terrain(a, "G", color="H", resolution=30)
         np.testing.assert_allclose(t.values[t.mask], 3)
+        np.testing.assert_allclose(t.color_values[t.color_mask], 3)
     finally:
         a.file.close()
 

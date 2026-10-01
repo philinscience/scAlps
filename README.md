@@ -72,6 +72,31 @@ Or `scalps demo --value MKI67 --preset ember -o outputs/demo.png`.
 | Signed score, including valleys | `sca.terrain(adata, "immune_balance")` |
 | Custom per-cell values | `sca.terrain(adata, my_array)` |
 
+## Independent height and color
+
+Keep T-cell density as height and color it by a gene or score in those T cells:
+
+```python
+mountain = sca.terrain(
+    adata, groupby="cell_type", groups="T cell",
+    color="Cd8a", color_layer="log1p_norm",
+)
+mountain.plot(cmap="viridis", title="T-cell density and Cd8a")
+```
+
+Omit `color` to keep the original behavior: height and color encode the same field.
+With `color`, its mean is computed among the selected cells, independently of
+height, using the same grid and smoothing. The figure labels both encodings.
+`vmax` controls height; `clim` controls color. Contours follow height.
+Gray surface regions have no color estimate; zero expression is a valid value.
+
+![Independent T-cell density and synthetic activation score](docs/assets/height-and-color.png)
+
+This illustration uses the explicitly **synthetic** `activation_score` in
+`sca.demo()`. Cd8a expression is a gene measurement, not an activation score.
+See [the recipe](docs/recipes.md#independent-height-and-color) for the real GS52
+example in native coordinate units and a reproducible rendering script.
+
 `alpine`, `ember`, and `glacier` select the terrain palette. Every preset uses
 a **white background**, regular sans-serif labels, and a separate color-bar
 panel. Figures have no branding or watermark. Signed values automatically use

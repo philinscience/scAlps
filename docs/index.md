@@ -25,6 +25,17 @@ For your Xenium data, supply cell centroids in `adata.obsm["spatial"]`.
 Use a gene name, numeric `obs` column or no value for cell density.
 Coordinates default to micrometers; see [units and methods](method.md).
 
+For two measurements at once, add `color`: for example, T-cell density as
+height and a score or gene as color. Both are labelled separately.
+
+```python
+sca.plot(adata, groupby="cell_type", groups="T cell",
+         color="activation_score", cmap="viridis")  # synthetic demo score
+```
+
+See [independent height and color](recipes.md#independent-height-and-color)
+for a Cd8a example with real Xenium data.
+
 ## Build once, explore and export
 
 ```python

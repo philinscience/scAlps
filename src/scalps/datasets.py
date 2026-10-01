@@ -54,5 +54,8 @@ def demo(n_cells=30_000, seed=7):
     )
     adata.obsm["spatial"] = xy
     adata.layers["counts"] = adata.X.copy()
+    # Deliberately independent of the T-cell density field; an illustration only.
+    activation = np.clip(0.1 + 0.8 * peak(3400, 2700, 700) + rng.normal(0, 0.06, n_cells), 0, 1)
+    adata.obs["activation_score"] = np.where(cell_type == "T cell", activation, np.nan)
     adata.uns["scalps"] = {"synthetic": True, "seed": seed, "coordinate_unit": "µm"}
     return adata

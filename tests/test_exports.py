@@ -61,8 +61,9 @@ def test_footprint_below_signed_terrain():
         p.close()
 
 
-def test_gif_legend_is_pixel_stable_while_terrain_rotates(tmp_path):
-    t = sca.terrain(sca.demo(2000), "MKI67", resolution=40)
+@pytest.mark.parametrize("color", [None, "activation_score"])
+def test_gif_legend_is_pixel_stable_while_terrain_rotates(tmp_path, color):
+    t = sca.terrain(sca.demo(2000), "MKI67", color=color, resolution=40)
     gif = t.save(tmp_path / "stable.gif", frames=6, fps=15, window_size=(500, 400), preset="ember")
     with Image.open(gif) as im:
         first = np.asarray(im.convert("RGB"))
@@ -73,6 +74,8 @@ def test_gif_legend_is_pixel_stable_while_terrain_rotates(tmp_path):
             frame = np.asarray(im.convert("RGB"))
             # The bottom 16% is the fixed legend viewport.
             np.testing.assert_array_equal(frame[340:], first[340:])
+            if color:
+                np.testing.assert_array_equal(frame[:55], first[:55])
             terrain_changes.append(np.any(frame[80:330] != first[80:330]))
             durations.append(im.info["duration"])
     assert any(terrain_changes)

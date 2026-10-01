@@ -36,6 +36,15 @@ def _colormap(preset):
     return PRESETS[preset]["cmap"]
 
 
+def _field_label(label, metadata):
+    statistic = metadata.get("statistic", "mean")
+    if statistic in {"mean", "sum"}:
+        label = f"{statistic.capitalize()} {label}"
+        if metadata.get("layer"):
+            label += f" ({metadata['layer']})"
+    return label
+
+
 def _write_orbit(plotter, path, frames, fps):
     """Encode all views with one palette so stationary legends remain stationary."""
     from PIL import Image
@@ -86,6 +95,7 @@ def plot(
     footprint_color="#d6d6d6",
     footprint_gap=0.06,
     title=None,
+    height_label=None,
     background="white",
     axes=False,
     scalar_bar=True,
@@ -101,6 +111,8 @@ def plot(
     Use ``show=False`` to customize it, or ``off_screen=True, show=False`` on a server.
     ``image_coordinates=True`` displays increasing y downward (Xenium convention).
     ``clim`` controls raw color limits; ``vmax`` controls absolute geometric scaling.
+    With a separate ``color`` field, height and color get distinct labels;
+    contours always follow height. Gray surface regions have no color estimate.
     All presets use a white background by default. The legend has a dedicated
     viewport and uses regular DejaVu Sans, independent of the global PyVista theme.
     """
@@ -122,7 +134,10 @@ def plot(
     if image_coordinates:
         mesh.points[:, 1] *= -1
         mesh.flip_faces(inplace=True)
-    finite = landscape.values[landscape.mask]
+    height_values = landscape.values[landscape.mask]
+    separate_color = landscape.color_values is not None
+    color_values = landscape.color_values if separate_color else landscape.values
+    finite = color_values[landscape.mask & np.isfinite(color_values)]
     signed = finite.min() < 0
     if clim is None:
         if signed:
@@ -131,9 +146,18 @@ def plot(
         else:
             clim = (0, max(float(finite.max()), 1e-12))
     # Keep the legend outside the 3D viewport, even when the camera is rotated.
-    layout = dict(shape=(2, 1), row_weights=(0.84, 0.16)) if scalar_bar else {}
+    if separate_color:
+        layout = (
+            dict(shape=(3, 1), row_weights=(0.14, 0.68, 0.18))
+            if scalar_bar
+            else dict(shape=(2, 1), row_weights=(0.14, 0.86))
+        )
+    else:
+        layout = dict(shape=(2, 1), row_weights=(0.84, 0.16)) if scalar_bar else {}
     p = pv.Plotter(off_screen=off_screen, window_size=window_size, border=False, **layout)
     p.set_background(background, all_renderers=True)
+    if separate_color:
+        p.subplot(1, 0)
     font_file = findfont("DejaVu Sans")
     ink = "#202020"
     font_scale = min(window_size) / 1000
@@ -141,7 +165,9 @@ def plot(
     title_size = max(10, round(22 * font_scale))
     actor = p.add_mesh(
         mesh,
-        scalars="value",
+        scalars="color" if separate_color else "value",
+        name="terrain",
+        nan_color="#b8b8b8",
         cmap=cmap or ("RdBu_r" if signed else _colormap(preset)),
         clim=clim,
         smooth_shading=True,
@@ -200,20 +226,33 @@ def plot(
             )
             curtain = pv.PolyData(np.vstack([top, bottom]), faces.ravel())
             p.add_mesh(curtain, color=style["rock"], smooth_shading=False, ambient=0.3)
-    if contours and finite.max() > finite.min():
-        levels = np.linspace(finite.min(), finite.max(), int(contours) + 2)[1:-1]
+    if contours and height_values.max() > height_values.min():
+        levels = np.linspace(height_values.min(), height_values.max(), int(contours) + 2)[1:-1]
         lines = mesh.contour(levels, scalars="value")
         if lines.n_points:
             lines.points[:, 2] += span * 0.0004
             p.add_mesh(lines, color=ink, opacity=0.22, line_width=1, show_scalar_bar=False)
+    if separate_color:
+        p.subplot(0, 0)
     p.add_text(
         landscape.label if title is None else title,
-        position=(0.045, 0.91),
+        position=(0.045, 0.58 if separate_color else 0.91),
         viewport=True,
         font_size=title_size,
         color=ink,
         font_file=font_file,
     )
+    if separate_color:
+        height_label = height_label or _field_label(landscape.label, landscape.metadata)
+        p.add_text(
+            f"Height: {height_label}",
+            position=(0.045, 0.14),
+            viewport=True,
+            font_size=max(9, round(16 * font_scale)),
+            color=ink,
+            font_file=font_file,
+        )
+        p.subplot(1, 0)
     if axes:
         p.show_bounds(
             xtitle=f"x ({landscape.metadata['unit']})",
@@ -225,18 +264,17 @@ def plot(
     p.view_isometric()
     p.enable_parallel_projection()
     p.camera.elevation = 12
-    p.camera.zoom(1.25)
+    p.camera.zoom(1.1 if separate_color else 1.25)
     p.enable_anti_aliasing("ssaa")
     if scalar_bar:
-        p.subplot(1, 0)
-        statistic = landscape.metadata.get("statistic", "mean")
+        p.subplot(2 if separate_color else 1, 0)
         if scalar_bar_title is None:
-            scalar_bar_title = landscape.label
-            if statistic in {"mean", "sum"}:
-                scalar_bar_title = f"{statistic.capitalize()} {landscape.label}"
-                layer = landscape.metadata.get("layer")
-                if layer:
-                    scalar_bar_title += f" ({layer})"
+            scalar_bar_title = _field_label(
+                landscape.color_label if separate_color else landscape.label,
+                (landscape.metadata.get("color") or {}) if separate_color else landscape.metadata,
+            )
+        if separate_color:
+            scalar_bar_title = f"Color: {scalar_bar_title}"
         p.add_text(
             scalar_bar_title,
             position=(0.23, 0.75),
@@ -257,9 +295,9 @@ def plot(
             fmt="%.3g",
             n_labels=5,
             position_x=0.23,
-            position_y=0.13,
+            position_y=0.28 if separate_color else 0.13,
             width=0.54,
-            height=0.42,
+            height=0.35 if separate_color else 0.42,
             vertical=False,
         )
         # PyVista exposes no font-file keyword on scalar bars. Use its TextProperty
@@ -269,7 +307,16 @@ def plot(
                 font_file=font_file, font_size=label_size, color=ink, bold=False, italic=False
             )
         )
-        p.subplot(0, 0)
+        if separate_color and np.any(landscape.mask & ~np.isfinite(color_values)):
+            p.add_text(
+                "Gray surface: no color estimate",
+                position=(0.045, 0.02),
+                viewport=True,
+                font_size=max(8, round(12 * font_scale)),
+                color=ink,
+                font_file=font_file,
+            )
+        p.subplot(1 if separate_color else 0, 0)
     if show:
         p.show()
     return p
@@ -293,6 +340,11 @@ def save(landscape, path, *, frames=360, fps=15, transparent_background=False, *
         raise ValueError("Transparent backgrounds are supported for PNG exports only.")
     path.parent.mkdir(parents=True, exist_ok=True)
     if suffix == ".npz":
+        color_arrays = (
+            dict(color_values=landscape.color_values, color_mask=landscape.color_mask)
+            if landscape.color_values is not None
+            else {}
+        )
         np.savez_compressed(
             path,
             x=landscape.x,
@@ -301,6 +353,7 @@ def save(landscape, path, *, frames=360, fps=15, transparent_background=False, *
             mask=landscape.mask,
             counts=landscape.counts,
             tissue_mask=landscape.mask if landscape.tissue_mask is None else landscape.tissue_mask,
+            **color_arrays,
         )
     elif suffix == ".vtp":
         landscape.mesh(**kwargs).save(path)
@@ -339,6 +392,14 @@ def save(landscape, path, *, frames=360, fps=15, transparent_background=False, *
     )
     if suffix == ".gif":
         metadata.update(frames=frames, fps=fps, orbit_seconds=frames / fps)
+    if landscape.color_values is not None:
+        metadata.update(
+            color_label=landscape.color_label,
+            color_range=[
+                float(np.nanmin(landscape.color_values)),
+                float(np.nanmax(landscape.color_values)),
+            ],
+        )
     path.with_suffix(path.suffix + ".json").write_text(
         json.dumps(metadata, indent=2, default=str) + "\n"
     )

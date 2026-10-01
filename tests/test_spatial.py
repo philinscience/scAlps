@@ -28,12 +28,15 @@ def test_centroids_align_by_instance_and_transform():
     )
     table = TableModel.parse(table, region="cells", region_key="region", instance_key="instance")
     sdata = sd.SpatialData(points={"cells": points}, tables={"table": table})
-    actual = sca.terrain(sdata, "G", element="cells", resolution=16, support=0.001)
+    table.obs["score"] = [3.0, 1.0, 7.0, np.nan]
+    actual = sca.terrain(sdata, "G", color="score", element="cells", resolution=16, support=0.001)
     expected = table.copy()
     expected.obsm["spatial"] = np.array([[120, 210], [130, 230], [100, 200], [110, 220]])
-    reference = sca.terrain(expected, "G", resolution=16, support=0.001)
+    reference = sca.terrain(expected, "G", color="score", resolution=16, support=0.001)
     np.testing.assert_allclose(actual.values, reference.values)
     np.testing.assert_allclose(actual.x, reference.x)
+    np.testing.assert_allclose(actual.color_values, reference.color_values)
+    np.testing.assert_array_equal(actual.color_mask, reference.color_mask)
     assert "spatial" not in table.obsm
 
 

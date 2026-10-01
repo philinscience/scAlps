@@ -21,14 +21,19 @@ class Terrain:
     label: str
     metadata: dict = field(default_factory=dict)
     tissue_mask: np.ndarray | None = None
+    color_values: np.ndarray | None = None
+    color_mask: np.ndarray | None = None
+    color_label: str | None = None
 
-    def _surface(self, z, mask, values=None):
+    def _surface(self, z, mask, values=None, colors=None):
         import pyvista as pv
 
         xx, yy = np.meshgrid(self.x, self.y, indexing="ij")
         grid = pv.StructuredGrid(xx, yy, z)
         if values is not None:
             grid.point_data["value"] = values.ravel(order="F")
+        if colors is not None:
+            grid.point_data["color"] = colors.ravel(order="F")
         grid.point_data["support"] = mask.astype(float).ravel(order="F")
         surface = grid.threshold(0.5, scalars="support", preference="point", all_scalars=True)
         if not surface.n_cells:
@@ -63,7 +68,7 @@ class Terrain:
             z = np.sign(z) * np.log1p(9 * np.abs(z)) / np.log(10)
         z *= max(np.ptp(self.x), np.ptp(self.y)) * height
         # Drop quads touching unsupported vertices; no bridges across large tissue gaps.
-        return self._surface(z, self.mask, raw)
+        return self._surface(z, self.mask, raw, self.color_values)
 
     def plot(self, **kwargs):
         """Build a styled PyVista plotter; see scalps.plot."""
@@ -86,6 +91,9 @@ def terrain(
     groups=None,
     statistic=None,
     layer=None,
+    color=None,
+    color_layer=None,
+    color_statistic="mean",
     spatial_key="spatial",
     table=None,
     element=None,
@@ -106,6 +114,9 @@ def terrain(
     ``groups`` selects cells but retains the full tissue footprint.
     ``density_percentile`` hides regions below this percentile of smoothed
     all-cell density sampled at cell locations. Set to 0 to disable trimming.
+    ``color`` optionally supplies a separate numeric field, aggregated among
+    the same selected cells on exactly the same grid. Missing color values do
+    not affect height; unestimated colors remain NaN. By default color=height.
     """
     if isinstance(resolution, bool) or not isinstance(resolution, (int, np.integer)):
         raise ValueError("resolution must be an integer between 16 and 2000.")
@@ -121,6 +132,13 @@ def terrain(
         raise ValueError("density_scale must be finite and positive.")
     adata, xy = resolve(data, spatial_key, table, element, coordinate_system)
     val, label = values(adata, value, layer)
+    if color_statistic not in {"mean", "sum"}:
+        raise ValueError("color_statistic must be mean or sum.")
+    if color is None and (color_layer is not None or color_statistic != "mean"):
+        raise ValueError("color_layer/color_statistic require color=.")
+    color_val, color_label = (
+        values(adata, color, color_layer) if color is not None else (None, None)
+    )
     statistic = statistic or ("density" if val is None else "mean")
     if statistic not in {"density", "mean", "sum", "fraction"}:
         raise ValueError("statistic must be density, mean, sum or fraction.")
@@ -140,6 +158,10 @@ def terrain(
         raise ValueError("No cells selected.")
     if statistic == "fraction" and groupby is None:
         raise ValueError("fraction requires groupby= and groups=.")
+    # Keep population selection independent of missing values in either channel.
+    color_selected = selected & np.isfinite(color_val) if color_val is not None else None
+    if color_selected is not None and not color_selected.any():
+        raise ValueError("No finite color values in the selected cells.")
     if val is not None:
         selected &= np.isfinite(val)
         if not selected.any():
@@ -191,6 +213,28 @@ def terrain(
             "No tissue support; reduce support, reduce resolution, or increase smooth."
         )
     result[~mask] = np.nan
+    color_result, color_mask, color_metadata = None, None, None
+    if color_val is not None:
+        color_count = blur(hist(xy[color_selected]))
+        color_sum = blur(hist(xy[color_selected], color_val[color_selected]))
+        color_mask = mask & (color_count > 1e-12)
+        if not color_mask.any():
+            raise ValueError("No finite color estimates within the terrain support.")
+        color_result = (
+            np.divide(
+                color_sum, color_count, out=np.zeros_like(color_sum), where=color_count > 1e-12
+            )
+            if color_statistic == "mean"
+            else color_sum
+        )
+        color_result[~color_mask] = np.nan
+        color_metadata = dict(
+            value=color if isinstance(color, str) else "array",
+            label=color_label,
+            layer=color_layer,
+            statistic=color_statistic,
+            n_selected=int(color_selected.sum()),
+        )
     return Terrain(
         (edges[0][:-1] + edges[0][1:]) / 2,
         (edges[1][:-1] + edges[1][1:]) / 2,
@@ -217,8 +261,12 @@ def terrain(
             coordinate_system=coordinate_system if element is not None else None,
             value=value if isinstance(value, str) else ("array" if value is not None else None),
             layer=layer,
+            color=color_metadata,
             groupby=groupby,
             groups=None if groups is None else list(map(str, groups)),
         ),
         tissue_mask=tissue_mask,
+        color_values=color_result,
+        color_mask=color_mask,
+        color_label=color_label,
     )

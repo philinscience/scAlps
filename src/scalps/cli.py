@@ -13,6 +13,9 @@ def main():
     parser.add_argument("--groupby")
     parser.add_argument("--groups", nargs="+")
     parser.add_argument("--layer")
+    parser.add_argument("--color", help="Independent gene or obs column for color")
+    parser.add_argument("--color-layer", help="Expression layer for the color gene")
+    parser.add_argument("--color-statistic", choices=["mean", "sum"], default="mean")
     parser.add_argument("--resolution", type=int, default=250)
     parser.add_argument("--smooth", type=float, default=2)
     parser.add_argument(
@@ -37,6 +40,9 @@ def main():
             groupby=args.groupby,
             groups=args.groups,
             layer=args.layer,
+            color=args.color,
+            color_layer=args.color_layer,
+            color_statistic=args.color_statistic,
             resolution=args.resolution,
             smooth=args.smooth,
             density_percentile=args.density_percentile,
