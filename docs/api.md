@@ -62,8 +62,10 @@ PNG, HTML and GIF accept visual options except `show`/`off_screen` (set internal
 PNG additionally accepts `transparent_background=True` to write an RGBA image.
 Other formats reject transparency. Figures use regular DejaVu Sans, no watermark,
 and a legend panel below the 3D view. `title=""` hides the figure title.
-GIF adds `frames=360, fps=15`: one slow revolution in about 24 seconds. GIF frame
-delays are quantized to centiseconds by the encoder. Use `frames` and `fps` to
+GIF adds `frames=360, fps=15`: one slow revolution in 24 seconds. All frames use
+one shared color palette, keeping stationary legends and labels pixel-stable.
+Frame delays are quantized to centiseconds with rounding distributed across
+frames to preserve total duration. Use `frames` and `fps` to
 control the speed; more frames at the same fps make a slower, smoother orbit.
 HTML requires the notebook extra.
 VTP accepts only `mesh()` options. NPZ stores the arrays directly.

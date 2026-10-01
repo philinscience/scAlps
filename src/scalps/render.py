@@ -36,6 +36,40 @@ def _colormap(preset):
     return PRESETS[preset]["cmap"]
 
 
+def _write_orbit(plotter, path, frames, fps):
+    """Encode all views with one palette so stationary legends remain stationary."""
+    from PIL import Image
+
+    indexed = []
+    palette = None
+    try:
+        for _ in range(frames):
+            plotter.render()
+            rgb = Image.fromarray(plotter.screenshot(return_img=True)).convert("RGB")
+            if palette is None:
+                # The first frame includes the entire color scale as well as the
+                # tissue, background and text. Keep its palette for every view.
+                palette = rgb.quantize(colors=256)
+            indexed.append(rgb.quantize(palette=palette, dither=Image.Dither.NONE))
+            rgb.close()
+            plotter.camera.azimuth += 360 / frames
+        # Distribute GIF's 10 ms timing quantization across frames, avoiding drift.
+        boundaries = np.round(np.arange(frames + 1) * 100 / fps).astype(int) * 10
+        indexed[0].save(
+            path,
+            save_all=True,
+            append_images=indexed[1:],
+            loop=0,
+            duration=np.diff(boundaries).tolist(),
+            optimize=False,
+        )
+    finally:
+        for frame in indexed:
+            frame.close()
+        if palette is not None:
+            palette.close()
+
+
 def plot(
     data,
     value=None,
@@ -283,10 +317,7 @@ def save(landscape, path, *, frames=360, fps=15, transparent_background=False, *
                 except ImportError as exc:
                     raise ImportError("HTML export needs: pip install 'scalps[notebook]'") from exc
             else:
-                p.open_gif(path, fps=fps)
-                for _ in range(frames):
-                    p.write_frame()
-                    p.camera.azimuth += 360 / frames
+                _write_orbit(p, path, frames, fps)
         finally:
             p.close()
     render_options = dict(kwargs)
